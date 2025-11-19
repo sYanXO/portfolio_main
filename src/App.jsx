@@ -78,14 +78,16 @@ const PeepingSnorlax = ({ darkMode }) => {
     "I reviewed his PRs... mostly while dreaming. LGTM.",
     "He handles concurrency. I handle dormancy.",
     "Is it a bug or a feature? I'm too tired to check...",
-    "He knows how to center a div. I think. Zzz...",
+    "He knows how to center a div. But prefers microservices. Zzz...",
     "O(log n)? I prefer O(sleep n).",
     "He optimizes backends. I optimize napping.",
     "10x developer? No, I sleep 10x more than him.",
     "Wait, are you a recruiter? Do you have snacks?",
     "His code compiles... eventually. Zzz...",
     "He works hard so I don't have to.",
-    "Checking for race conditions... *yawn*... looks safe."
+    "Checking for race conditions... *yawn*... looks safe.",
+    "CAP theorem? I choose Consistency... in sleeping.",
+    "He manages state. I remain stateless (and asleep)."
   ];
 
   const handleMouseEnter = () => {
@@ -179,7 +181,7 @@ const App = () => {
       company: "CipherByte Technologies",
       role: "Full Stack Developer Intern",
       period: "Aug 2024 - Dec 2024",
-      desc: "Built a scalable e-commerce platform supporting 100+ products and concurrent users. Integrated secure payment gateways and optimized the MERN stack for performance.",
+      desc: "Engineered the backend architecture for a scalable e-commerce platform. Optimized database indexing and API response times to support 100+ concurrent users and high-volume transaction flows.",
       icon: <Layers size={20} />
     },
     {
@@ -298,7 +300,7 @@ const App = () => {
         <Reveal>
           <div className="max-w-4xl mx-auto w-full">
             <div className={`inline-block px-3 py-1 mb-6 text-xs font-bold tracking-widest uppercase rounded-full border ${theme.border} ${theme.accentSecondary}`}>
-              Software Development Engineer
+              Backend Systems Engineer
             </div>
             <h1 className="text-5xl md:text-8xl font-extrabold tracking-tight mb-8 leading-tight">
               Building systems with <br/>
@@ -309,7 +311,7 @@ const App = () => {
             <p className={`text-lg md:text-xl max-w-2xl mb-12 leading-relaxed ${theme.textMuted}`}>
               I'm a 2025 ECE Graduate and a Math Nerd who loves low-level systems. 
               Specializing in high-concurrency backends with <b>Golang</b>, data analysis with <b>Python</b>, 
-              and full-stack applications.
+              and scalable distributed systems.
             </p>
             
             <div className="flex flex-wrap gap-4 mb-16">
