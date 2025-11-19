@@ -40,7 +40,7 @@ const Reveal = ({ children, delay = 0 }) => {
       },
       {
         threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px" // Trigger slightly before element is fully in view
+        rootMargin: "0px 0px -50px 0px"
       }
     );
 
@@ -98,7 +98,6 @@ const App = () => {
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
-      // Native smooth scroll for "Apple-like" glide
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setIsMenuOpen(false);
     }
@@ -131,7 +130,7 @@ const App = () => {
       company: "CipherByte Technologies",
       role: "Full Stack Developer Intern",
       period: "Aug 2024 - Dec 2024",
-      desc: "Built a scalable e-commerce platform supporting 100+ concurrent users. Integrated secure payment gateways and optimized the MERN stack for performance.",
+      desc: "Built a scalable e-commerce platform supporting 100+ products and concurrent users. Integrated secure payment gateways and optimized the MERN stack for performance.",
       icon: <Layers size={20} />
     },
     {
@@ -173,7 +172,7 @@ const App = () => {
       title: "Vercel Clone",
       tech: ["React", "AWS S3", "Redis", "Docker"],
       desc: "Automated deployment platform for static sites. Uses SQS for decoupling builds and S3 for storage, mimicking core Vercel architecture.",
-      link: "#",
+      link: "#", // No link provided in resume for this one, kept as placeholder or #
       icon: <Server className={darkMode ? "text-[#89b4fa]" : "text-[#1e66f5]"} /> // Blue
     }
   ];
@@ -266,16 +265,21 @@ const App = () => {
               <a href="mailto:desreayan@gmail.com" className={`px-8 py-4 rounded-lg font-bold transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${theme.button}`}>
                 Contact Me
               </a>
-              <a href="#" className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 ${theme.border} hover:border-[#fab387] hover:bg-[#fab387]/10`}>
-                <FileText size={18} /> Download Resume
+              <a 
+                href="https://drive.google.com/file/d/1ajiIHv59wznABwcxGCdEqORMLrZ6xjA7/view?usp=sharing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 ${theme.border} hover:border-[#fab387] hover:bg-[#fab387]/10`}
+              >
+                <FileText size={18} /> View Resume
               </a>
             </div>
 
             <div className="flex flex-wrap gap-6 items-center">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+              <a href="https://github.com/sreayan-oss" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
                 <Github size={28} />
               </a>
-              <a href="https://linkedin.com/in/sreayande" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+              <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
                 <Linkedin size={28} />
               </a>
               <a href="mailto:desreayan@gmail.com" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
@@ -284,10 +288,10 @@ const App = () => {
               {/* Separator */}
               <div className={`hidden sm:block h-8 w-px ${theme.border} bg-current opacity-20 mx-2`}></div>
               {/* CP Profiles */}
-              <a href="#" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+              <a href="https://leetcode.com/u/spaceCadet22/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
                 <Code size={20} /> LeetCode
               </a>
-              <a href="#" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+              <a href="https://codeforces.com/profile/EigenYan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
                 <Trophy size={20} /> CodeForces
               </a>
             </div>
