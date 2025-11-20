@@ -43,7 +43,7 @@ const PeepingSnorlax = ({ darkMode }) => {
             {/* Snorlax GIF */}
             <img
                 src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/143.gif"
-                alt="Snorlax"
+                alt="Snorlax Awake"
                 className="w-32 h-32 object-contain filter drop-shadow-2xl cursor-pointer transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-2"
             />
         </div>

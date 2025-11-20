@@ -20,7 +20,7 @@ const Contact = ({ theme }) => {
                     </a>
 
                     <div className={`mt-24 text-sm font-medium ${theme.textMuted}`}>
-                        <p>&copy; 2025 Sreayan De. Built with React & Tailwind.</p>
+                        <p>&copy; 2025 Sreayan. Built with React & Tailwind.</p>
                     </div>
                 </div>
             </Reveal>

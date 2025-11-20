@@ -23,6 +23,25 @@ const Projects = ({ theme, darkMode }) => {
                                     <div className={`inline-flex p-4 rounded-xl bg-opacity-10 mb-6 transition-transform group-hover:scale-110 duration-500 ${darkMode ? 'bg-[#cdd6f4]/5' : 'bg-[#4c4f69]/5'}`}>
                                         {project.icon}
                                     </div>
+
+                                    {/* Status Signal */}
+                                    <div className="absolute top-6 right-6 flex items-center gap-3">
+                                        {project.status === 'active' && (
+                                            <span className={`text-xs font-medium ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                                Under development
+                                            </span>
+                                        )}
+                                        {project.status === 'completed' && (
+                                            <span className={`text-xs font-medium ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                                                Completed
+                                            </span>
+                                        )}
+
+                                        <div className={`w-3 h-3 rounded-full ${project.status === 'active' ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
+                                            project.status === 'abandoned' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                                'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
+                                            }`} />
+                                    </div>
                                     <h3 className="text-2xl font-bold mb-3 group-hover:text-[#fab387] dark:group-hover:text-[#fe640b] transition-colors">
                                         {project.title}
                                     </h3>

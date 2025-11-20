@@ -7,6 +7,7 @@ import Projects from './components/Projects';
 import Skills from './components/Skills';
 import Education from './components/Education';
 import Contact from './components/Contact';
+import BackgroundEffect from './components/BackgroundEffect';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
@@ -67,6 +68,8 @@ const App = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-[#fab387] selection:text-[#1e1e2e] ${theme.bg} ${theme.text}`}>
+
+      <BackgroundEffect darkMode={darkMode} />
 
       <PeepingSnorlax darkMode={darkMode} />
 
