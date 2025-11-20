@@ -67,7 +67,7 @@ export const getProjects = (darkMode) => [
         tech: ["React", "AWS S3", "Redis", "Docker"],
         desc: "Automated deployment platform for static sites. Uses SQS for decoupling builds and S3 for storage, mimicking core Vercel architecture.",
         link: "#",
-        status: "active",
+        status: "abandoned",
         icon: <Server className={darkMode ? "text-[#89b4fa]" : "text-[#1e66f5]"} /> // Blue
     }
 ];

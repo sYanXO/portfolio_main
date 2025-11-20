@@ -36,9 +36,14 @@ const Projects = ({ theme, darkMode }) => {
                                                 Completed
                                             </span>
                                         )}
+                                        {project.status === 'abandoned' && (
+                                            <span className={`text-xs font-medium ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                                Abandoned
+                                            </span>
+                                        )}
 
                                         <div className={`w-3 h-3 rounded-full ${project.status === 'active' ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                                            project.status === 'abandoned' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                            project.status === 'abandoned' ? 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
                                                 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
                                             }`} />
                                     </div>
