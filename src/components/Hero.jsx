@@ -53,10 +53,10 @@ const Hero = ({ theme, scrollToSection, darkMode }) => {
                         {/* Separator */}
                         <div className={`hidden sm:block h-8 w-px ${theme.border} bg-current opacity-20 mx-2`}></div>
                         {/* CP Profiles */}
-                        <a href="https://leetcode.com/u/spaceCadet22/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
                             <Code size={20} /> LeetCode
                         </a>
-                        <a href="https://codeforces.com/profile/EigenYan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://codeforces.com/profile/Sreayan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
                             <Trophy size={20} /> CodeForces
                         </a>
                     </div>
