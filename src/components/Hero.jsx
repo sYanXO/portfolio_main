@@ -41,7 +41,7 @@ const Hero = ({ theme, scrollToSection, darkMode }) => {
                     </div>
 
                     <div className="flex flex-wrap gap-6 items-center">
-                        <a href="https://github.com/sreayan-oss" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://github.com/sYanXO" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
                             <Github size={28} />
                         </a>
                         <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>

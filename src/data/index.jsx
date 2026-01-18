@@ -42,7 +42,7 @@ export const getProjects = (darkMode) => [
         title: "DB Uploader",
         tech: ["Golang", "Concurrency", "PostgreSQL"],
         desc: "High-performance Go application designed to efficiently read large JSON datasets and upload them to a database using concurrent workers.",
-        link: "https://github.com/sreayan-oss/db-uploader",
+        link: "https://github.com/sYanXO/db-uploader",
         status: "active",
         icon: <Database className={darkMode ? "text-[#cba6f7]" : "text-[#8839ef]"} /> // Purple
     },
@@ -50,7 +50,7 @@ export const getProjects = (darkMode) => [
         title: "Go-Arbitrage-Bot",
         tech: ["Golang", "Concurrency", "WebSockets"],
         desc: "High-concurrency CLI tool detecting price anomalies across Binance & Coinbase. Implemented Fan-In/Fan-Out patterns to handle asynchronous data streams without lock contention.",
-        link: "https://github.com/sreayan-oss/arb-bot",
+        link: "https://github.com/sYanXO/arb-bot",
         status: "completed",
         icon: <Cpu className={darkMode ? "text-[#f38ba8]" : "text-[#d20f39]"} /> // Red
     },
