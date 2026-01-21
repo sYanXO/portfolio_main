@@ -1,9 +1,7 @@
 import React from 'react';
-import { Terminal, Sun, Moon, X, Menu } from 'lucide-react';
+import { Terminal, X, Menu } from 'lucide-react';
 
 const Navbar = ({
-    darkMode,
-    toggleTheme,
     isMenuOpen,
     setIsMenuOpen,
     activeSection,
@@ -24,21 +22,15 @@ const Navbar = ({
                         <button
                             key={item}
                             onClick={() => scrollToSection(item.toLowerCase())}
-                            className={`relative hover:text-[#fab387] dark:hover:text-[#fe640b] transition-colors ${activeSection === item.toLowerCase() ? theme.accent : ''} after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full`}
+                            className={`relative hover:text-[#FFFFFF] transition-colors ${activeSection === item.toLowerCase() ? theme.accent : 'text-[#888888]'} after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full`}
                         >
                             {item}
                         </button>
                     ))}
-                    <button onClick={toggleTheme} className={`p-2 rounded-full transition-all duration-300 hover:rotate-12 ${darkMode ? 'hover:bg-[#cdd6f4]/10' : 'hover:bg-[#4c4f69]/10'}`}>
-                        {darkMode ? <Sun size={20} className="text-[#f9e2af]" /> : <Moon size={20} className="text-[#8839ef]" />}
-                    </button>
                 </div>
 
                 {/* Mobile Menu Toggle */}
                 <div className="md:hidden flex items-center gap-4">
-                    <button onClick={toggleTheme} className="p-2">
-                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
                     <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
                         {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
@@ -52,7 +44,7 @@ const Navbar = ({
                         <button
                             key={item}
                             onClick={() => scrollToSection(item.toLowerCase())}
-                            className="block w-full text-left py-3 font-medium hover:pl-2 transition-all"
+                            className="block w-full text-left py-3 font-medium hover:pl-2 transition-all hover:text-[#FFFFFF]"
                         >
                             {item}
                         </button>

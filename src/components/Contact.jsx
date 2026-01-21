@@ -4,7 +4,7 @@ import Reveal from './Reveal';
 
 const Contact = ({ theme }) => {
     return (
-        <section id="contact" className={`py-32 px-6 mt-10 border-t ${theme.border}`}>
+        <section id="contact" className={`py-32 px-6 mt-10 border-t border-[#333333]`}>
             <Reveal>
                 <div className="max-w-4xl mx-auto text-center">
                     <h2 className="text-4xl md:text-5xl font-bold mb-8">Let's Build Something Scalable.</h2>

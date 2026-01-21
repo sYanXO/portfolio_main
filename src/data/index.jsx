@@ -37,14 +37,14 @@ export const education = [
     }
 ];
 
-export const getProjects = (darkMode) => [
+export const getProjects = () => [
     {
         title: "DB Uploader",
         tech: ["Golang", "Concurrency", "PostgreSQL"],
         desc: "High-performance Go application designed to efficiently read large JSON datasets and upload them to a database using concurrent workers.",
         link: "https://github.com/sYanXO/db-uploader",
         status: "active",
-        icon: <Database className={darkMode ? "text-[#cba6f7]" : "text-[#8839ef]"} /> // Purple
+        icon: <Database className="text-[#EDEDED]" />
     },
     {
         title: "Go-Arbitrage-Bot",
@@ -52,7 +52,7 @@ export const getProjects = (darkMode) => [
         desc: "High-concurrency CLI tool detecting price anomalies across Binance & Coinbase. Implemented Fan-In/Fan-Out patterns to handle asynchronous data streams without lock contention.",
         link: "https://github.com/sYanXO/arb-bot",
         status: "completed",
-        icon: <Cpu className={darkMode ? "text-[#f38ba8]" : "text-[#d20f39]"} /> // Red
+        icon: <Cpu className="text-[#EDEDED]" />
     },
     {
         title: "Market-Neutral Quant Strategy",
@@ -60,7 +60,7 @@ export const getProjects = (darkMode) => [
         desc: "Backtested mean reversion strategy on 60+ tickers achieving 13.46% cumulative return. Implemented dynamic stop-loss (ATR-based) and regime filtering.",
         link: "https://github.com/sYanXO/NSE-meanReversion-strategy",
         status: "completed",
-        icon: <TrendingUp className={darkMode ? "text-[#a6e3a1]" : "text-[#40a02b]"} /> // Green
+        icon: <TrendingUp className="text-[#EDEDED]" />
     },
     {
         title: "Vercel Clone",
@@ -68,7 +68,7 @@ export const getProjects = (darkMode) => [
         desc: "Automated deployment platform for static sites. Uses SQS for decoupling builds and S3 for storage, mimicking core Vercel architecture.",
         link: "#",
         status: "abandoned",
-        icon: <Server className={darkMode ? "text-[#89b4fa]" : "text-[#1e66f5]"} /> // Blue
+        icon: <Server className="text-[#EDEDED]" />
     }
 ];
 

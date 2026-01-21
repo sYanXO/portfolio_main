@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PeepingSnorlax from './components/PeepingSnorlax';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Experience from './components/Experience';
@@ -7,10 +6,9 @@ import Projects from './components/Projects';
 import Skills from './components/Skills';
 import Education from './components/Education';
 import Contact from './components/Contact';
-import BackgroundEffect from './components/BackgroundEffect';
+import GithubHeatmap from './components/GithubHeatmap';
 
 const App = () => {
-  const [darkMode, setDarkMode] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
 
@@ -32,10 +30,6 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-  };
-
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -44,38 +38,24 @@ const App = () => {
     }
   };
 
-  // Theme classes - Catppuccin Mocha (Dark) & Latte (Light)
+  // Theme classes - Vercel Style (Dark Minimalist)
   const theme = {
-    bg: darkMode ? 'bg-[#1e1e2e]' : 'bg-[#eff1f5]',
-    text: darkMode ? 'text-[#cdd6f4]' : 'text-[#4c4f69]',
-    textMuted: darkMode ? 'text-[#a6adc8]' : 'text-[#6c6f85]',
-    accent: darkMode ? 'text-[#fab387]' : 'text-[#fe640b]', // Peach for focus
-    accentSecondary: darkMode ? 'text-[#89b4fa]' : 'text-[#1e66f5]', // Blue for secondary
-    border: darkMode ? 'border-[#45475a]' : 'border-[#bcc0cc]',
-    glass: darkMode
-      ? 'bg-[#1e1e2e]/80 backdrop-blur-xl border-b border-[#cdd6f4]/10'
-      : 'bg-[#eff1f5]/80 backdrop-blur-xl border-b border-[#4c4f69]/10',
-    cardGlass: darkMode
-      ? 'bg-[#313244]/60 backdrop-blur-md border border-[#cdd6f4]/5 hover:border-[#fab387]/50'
-      : 'bg-[#e6e9ef]/60 backdrop-blur-md border border-[#4c4f69]/5 hover:border-[#fe640b]/50',
-    button: darkMode
-      ? 'bg-[#fab387] text-[#1e1e2e] hover:bg-[#f9e2af] shadow-[0_0_15px_rgba(250,179,135,0.3)]'
-      : 'bg-[#fe640b] text-[#eff1f5] hover:bg-[#df8e1d] shadow-[0_0_15px_rgba(254,100,11,0.3)]',
-    techBadge: darkMode
-      ? 'border-[#45475a] bg-[#45475a]/30 text-[#cdd6f4]'
-      : 'border-[#bcc0cc] bg-[#bcc0cc]/30 text-[#4c4f69]',
+    bg: 'bg-[#000000]',
+    text: 'text-[#EDEDED]',
+    textMuted: 'text-[#888888]',
+    accent: 'text-[#FFFFFF]',
+    accentSecondary: 'text-[#CCCCCC]',
+    border: 'border-[#333333]',
+    glass: 'bg-[#000000]/80 backdrop-blur-xl border-b border-[#333333]',
+    cardGlass: 'bg-[#111111] border border-[#333333] hover:border-[#EDEDED]',
+    button: 'bg-[#EDEDED] text-[#000000] transition-all duration-300 hover:bg-white/10 hover:backdrop-blur-md hover:border hover:border-white/20 hover:text-white hover:shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]',
+    techBadge: 'border-[#333333] bg-[#111111] text-[#EDEDED]',
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-[#fab387] selection:text-[#1e1e2e] ${theme.bg} ${theme.text}`}>
-
-      <BackgroundEffect darkMode={darkMode} />
-
-      <PeepingSnorlax darkMode={darkMode} />
+    <div className={`min-h-screen font-sans selection:bg-[#333333] selection:text-[#EDEDED] ${theme.bg} ${theme.text}`}>
 
       <Navbar
-        darkMode={darkMode}
-        toggleTheme={toggleTheme}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
         activeSection={activeSection}
@@ -83,15 +63,17 @@ const App = () => {
         theme={theme}
       />
 
-      <Hero theme={theme} scrollToSection={scrollToSection} darkMode={darkMode} />
+      <Hero theme={theme} scrollToSection={scrollToSection} />
 
-      <Experience theme={theme} darkMode={darkMode} />
+      <Experience theme={theme} />
 
-      <Projects theme={theme} darkMode={darkMode} />
+      <Projects theme={theme} />
 
-      <Skills theme={theme} darkMode={darkMode} />
+      <Skills theme={theme} />
 
-      <Education theme={theme} darkMode={darkMode} />
+      <GithubHeatmap theme={theme} />
+
+      <Education theme={theme} />
 
       <Contact theme={theme} />
 

@@ -2,21 +2,21 @@ import React from 'react';
 import { FileText, Github, Linkedin, Mail, Code, Trophy, ChevronDown } from 'lucide-react';
 import Reveal from './Reveal';
 
-const Hero = ({ theme, scrollToSection, darkMode }) => {
+const Hero = ({ theme, scrollToSection }) => {
     return (
         <section id="home" className="pt-32 pb-20 px-6 min-h-screen flex flex-col justify-center relative overflow-hidden">
             {/* Background Decoration */}
-            <div className={`absolute top-20 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 -z-10 ${darkMode ? 'bg-[#fab387]' : 'bg-[#fe640b]'}`}></div>
-            <div className={`absolute bottom-20 left-0 w-72 h-72 rounded-full blur-3xl opacity-20 -z-10 ${darkMode ? 'bg-[#89b4fa]' : 'bg-[#1e66f5]'}`}></div>
+            <div className={`absolute top-20 right-0 w-96 h-96 rounded-full blur-3xl opacity-10 -z-10 bg-[#FFFFFF]`}></div>
+            <div className={`absolute bottom-20 left-0 w-72 h-72 rounded-full blur-3xl opacity-5 -z-10 bg-[#888888]`}></div>
 
             <Reveal>
                 <div className="max-w-4xl mx-auto w-full">
-                    <div className={`inline-block px-3 py-1 mb-6 text-xs font-bold tracking-widest uppercase rounded-full border ${theme.border} ${theme.accentSecondary}`}>
+                    <div className={`inline-block px-3 py-1 mb-6 text-xs font-bold tracking-widest uppercase rounded-full border ${theme.border} text-[#888888]`}>
                         Backend Systems Engineer
                     </div>
                     <h1 className="text-5xl md:text-8xl font-extrabold tracking-tight mb-8 leading-tight">
                         Building systems with <br />
-                        <span className={`bg-clip-text text-transparent bg-gradient-to-r ${darkMode ? 'from-[#fab387] to-[#f38ba8]' : 'from-[#fe640b] to-[#d20f39]'}`}>
+                        <span className={`bg-clip-text text-transparent bg-gradient-to-r from-[#EDEDED] to-[#666666]`}>
                             Math & Code.
                         </span>
                     </h1>
@@ -34,29 +34,29 @@ const Hero = ({ theme, scrollToSection, darkMode }) => {
                             href="https://drive.google.com/file/d/1iq9N44IIcD8nm_C4PmX2EEZMTn5Xk9zw/view?usp=sharing"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 ${theme.border} hover:border-[#fab387] hover:bg-[#fab387]/10`}
+                            className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 ${theme.border} hover:bg-[#333333] hover:text-[#FFFFFF] text-[#EDEDED]`}
                         >
                             <FileText size={18} /> View Resume
                         </a>
                     </div>
 
                     <div className="flex flex-wrap gap-6 items-center">
-                        <a href="https://github.com/sYanXO" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://github.com/sYanXO" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
                             <Github size={28} />
                         </a>
-                        <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
                             <Linkedin size={28} />
                         </a>
-                        <a href="mailto:desreayan@gmail.com" className={`transition-transform duration-300 hover:scale-110 hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="mailto:desreayan@gmail.com" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
                             <Mail size={28} />
                         </a>
                         {/* Separator */}
                         <div className={`hidden sm:block h-8 w-px ${theme.border} bg-current opacity-20 mx-2`}></div>
                         {/* CP Profiles */}
-                        <a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] ${theme.textMuted}`}>
                             <Code size={20} /> LeetCode
                         </a>
-                        <a href="https://codeforces.com/profile/Sreayan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#fab387] ${theme.textMuted}`}>
+                        <a href="https://codeforces.com/profile/Sreayan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] ${theme.textMuted}`}>
                             <Trophy size={20} /> CodeForces
                         </a>
                     </div>
@@ -64,7 +64,7 @@ const Hero = ({ theme, scrollToSection, darkMode }) => {
             </Reveal>
 
             {/* Scroll Indicator */}
-            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce opacity-50 cursor-pointer" onClick={() => scrollToSection('experience')}>
+            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce opacity-50 cursor-pointer text-[#EDEDED]" onClick={() => scrollToSection('experience')}>
                 <ChevronDown size={32} />
             </div>
         </section>

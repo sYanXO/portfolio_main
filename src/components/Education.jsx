@@ -3,7 +3,7 @@ import { GraduationCap, BookOpen } from 'lucide-react';
 import Reveal from './Reveal';
 import { education } from '../data/index.jsx';
 
-const Education = ({ theme, darkMode }) => {
+const Education = ({ theme }) => {
     return (
         <section id="education" className="py-32 px-6">
             <div className="max-w-4xl mx-auto">
@@ -28,7 +28,7 @@ const Education = ({ theme, darkMode }) => {
                                     </div>
                                 </div>
                                 <div className={`text-left md:text-right`}>
-                                    <span className={`inline-block px-6 py-3 rounded-full text-sm font-bold border shadow-lg ${darkMode ? 'border-[#fab387] text-[#fab387] bg-[#fab387]/10' : 'border-[#fe640b] text-[#fe640b] bg-[#fe640b]/10'}`}>
+                                    <span className={`inline-block px-6 py-3 rounded-full text-sm font-bold border shadow-lg border-[#333333] text-[#EDEDED] bg-[#111111]`}>
                                         {edu.period}
                                     </span>
                                 </div>
