@@ -39,6 +39,15 @@ export const education = [
 
 export const getProjects = () => [
     {
+        title: "OptiShrink",
+        tech: ["REACT", "VITE", "Javascript"],
+        desc: "A lightning-fast, client-side only image compressor designed to strictly meet specific file size targets (100kb, 50kb, 20kb). It processes user-provided images entirely in the browser, ensuring complete privacy, zero server uploads, and no downtime.",
+        githubLink: "https://github.com/sYanXO/Opti-Shrink",
+        liveLink: "https://opti-shrink.vercel.app/",
+        status: "active",
+        icon: <Layers className="text-[#EDEDED]" />
+    },
+    {
         title: "DB Uploader",
         tech: ["Golang", "Concurrency", "PostgreSQL"],
         desc: "High-performance Go application designed to efficiently read large JSON datasets and upload them to a database using concurrent workers.",

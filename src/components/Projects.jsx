@@ -62,15 +62,25 @@ const Projects = ({ theme }) => {
                                     </p>
                                 </div>
 
-                                <div className={`mt-auto pt-6 border-t border-[#333333] flex justify-between items-center`}>
+                                <div className={`mt-auto pt-6 border-t border-[#333333] flex items-center gap-6`}>
                                     <a
-                                        href={project.link}
+                                        href={project.githubLink || project.link}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-sm font-bold flex items-center gap-2 hover:underline decoration-2 underline-offset-4"
                                     >
                                         View Code <ExternalLink size={16} />
                                     </a>
+                                    {project.liveLink && (
+                                        <a
+                                            href={project.liveLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm font-bold flex items-center gap-2 hover:underline decoration-2 underline-offset-4"
+                                        >
+                                            Live Demo <ExternalLink size={16} />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         </Reveal>
