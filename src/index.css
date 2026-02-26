@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .interactive-focus {
+    @apply rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black motion-reduce:transition-none;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg border border-[#333333] text-[#EDEDED] transition-all duration-300 hover:border-[#EDEDED] hover:bg-[#1A1A1A] interactive-focus;
+  }
+}

@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GitHubCalendar } from 'react-github-calendar';
 import { Github } from 'lucide-react';
 import Reveal from './Reveal';
 
 const GithubHeatmap = ({ theme }) => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     // Custom theme for 2026 - GitHub Green
     const customTheme = {
         light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
@@ -20,8 +29,29 @@ const GithubHeatmap = ({ theme }) => {
                 </Reveal>
 
                 <Reveal>
-                    <div className={`p-8 rounded-3xl border transition-all duration-500 hover:shadow-2xl overflow-x-auto ${theme.cardGlass} flex justify-center`}>
-                        <div className="min-w-[800px]">
+                    <div className={`p-4 md:p-8 rounded-3xl border transition-all duration-500 hover:shadow-2xl overflow-x-auto ${theme.cardGlass} flex justify-center`}>
+                        {isMobile ? (
+                            <div className="w-full">
+                                <GitHubCalendar
+                                    username="sYanXO"
+                                    year={2026}
+                                    theme={customTheme}
+                                    blockSize={10}
+                                    blockMargin={3}
+                                    fontSize={11}
+                                    showWeekdayLabels={false}
+                                    style={{ color: '#EDEDED' }}
+                                />
+                                <a
+                                    href="https://github.com/sYanXO"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-4 inline-flex text-sm font-semibold underline underline-offset-4 interactive-focus"
+                                >
+                                    View full activity on GitHub
+                                </a>
+                            </div>
+                        ) : (
                             <GitHubCalendar
                                 username="sYanXO"
                                 year={2026}
@@ -30,11 +60,9 @@ const GithubHeatmap = ({ theme }) => {
                                 blockMargin={4}
                                 fontSize={14}
                                 showWeekdayLabels={true}
-                                style={{
-                                    color: '#EDEDED',
-                                }}
+                                style={{ color: '#EDEDED' }}
                             />
-                        </div>
+                        )}
                     </div>
                 </Reveal>
             </div>

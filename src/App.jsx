@@ -15,7 +15,7 @@ const App = () => {
   // Handle scroll to highlight active section
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'about', 'experience', 'projects', 'skills', 'education', 'contact'];
+      const sections = ['home', 'experience', 'projects', 'skills', 'activity', 'education', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {

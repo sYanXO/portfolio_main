@@ -27,36 +27,36 @@ const Hero = ({ theme, scrollToSection }) => {
                     </p>
 
                     <div className="flex flex-wrap gap-4 mb-16">
-                        <a href="mailto:desreayan@gmail.com" className={`px-8 py-4 rounded-lg font-bold transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${theme.button}`}>
+                        <a href="mailto:desreayan@gmail.com" className={`px-8 py-4 rounded-lg font-bold transition-all duration-300 hover:-translate-y-1 hover:shadow-lg interactive-focus ${theme.button}`}>
                             Contact Me
                         </a>
                         <a
                             href="https://drive.google.com/file/d/1iq9N44IIcD8nm_C4PmX2EEZMTn5Xk9zw/view?usp=sharing"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 ${theme.border} hover:bg-[#333333] hover:text-[#FFFFFF] text-[#EDEDED]`}
+                            className={`px-8 py-4 rounded-lg font-bold border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 interactive-focus ${theme.border} hover:bg-[#333333] hover:text-[#FFFFFF] text-[#EDEDED]`}
                         >
                             <FileText size={18} /> View Resume
                         </a>
                     </div>
 
                     <div className="flex flex-wrap gap-6 items-center">
-                        <a href="https://github.com/sYanXO" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
+                        <a href="https://github.com/sYanXO" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] interactive-focus ${theme.textMuted}`}>
                             <Github size={28} />
                         </a>
-                        <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
+                        <a href="https://www.linkedin.com/in/sreayande/" target="_blank" rel="noreferrer" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] interactive-focus ${theme.textMuted}`}>
                             <Linkedin size={28} />
                         </a>
-                        <a href="mailto:desreayan@gmail.com" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] ${theme.textMuted}`}>
+                        <a href="mailto:desreayan@gmail.com" className={`transition-transform duration-300 hover:scale-110 hover:text-[#FFFFFF] interactive-focus ${theme.textMuted}`}>
                             <Mail size={28} />
                         </a>
                         {/* Separator */}
                         <div className={`hidden sm:block h-8 w-px ${theme.border} bg-current opacity-20 mx-2`}></div>
                         {/* CP Profiles */}
-                        <a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] ${theme.textMuted}`}>
+                        <a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] interactive-focus ${theme.textMuted}`}>
                             <Code size={20} /> LeetCode
                         </a>
-                        <a href="https://codeforces.com/profile/Sreayan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] ${theme.textMuted}`}>
+                        <a href="https://codeforces.com/profile/Sreayan" target="_blank" rel="noreferrer" className={`flex items-center gap-2 text-sm font-bold transition-colors hover:text-[#FFFFFF] interactive-focus ${theme.textMuted}`}>
                             <Trophy size={20} /> CodeForces
                         </a>
                     </div>
