@@ -1,7 +1,25 @@
 import React from 'react';
-import { Code, ExternalLink } from 'lucide-react';
+import { Code, ExternalLink, CircleDot } from 'lucide-react';
 import Reveal from './Reveal';
 import { getProjects } from '../data/index.jsx';
+
+const statusConfig = {
+    active: {
+        label: 'Under Development',
+        badgeClass: 'text-green-300 bg-green-500/15 border-green-500/40',
+        dotClass: 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+    },
+    completed: {
+        label: 'Completed',
+        badgeClass: 'text-orange-300 bg-orange-500/15 border-orange-500/40',
+        dotClass: 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
+    },
+    abandoned: {
+        label: 'Abandoned',
+        badgeClass: 'text-red-300 bg-red-500/15 border-red-500/40',
+        dotClass: 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+    }
+};
 
 const Projects = ({ theme }) => {
     const projects = getProjects();
@@ -16,75 +34,71 @@ const Projects = ({ theme }) => {
                 </Reveal>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {projects.map((project, idx) => (
-                        <Reveal key={idx} delay={idx * 100}>
-                            <div className={`group relative p-8 rounded-2xl flex flex-col h-full transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${theme.cardGlass}`}>
-                                <div className="mb-6">
-                                    <div className={`inline-flex p-4 rounded-xl bg-opacity-10 mb-6 transition-transform group-hover:scale-110 duration-500 bg-[#FFFFFF]/5`}>
-                                        {project.icon}
+                    {projects.map((project, idx) => {
+                        const status = statusConfig[project.status] || statusConfig.completed;
+
+                        return (
+                            <Reveal key={idx} delay={idx * 100}>
+                                <div className={`group relative p-8 rounded-2xl flex flex-col h-full transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${theme.cardGlass}`}>
+                                    <div className="mb-6">
+                                        <div className={`inline-flex p-4 rounded-xl bg-opacity-10 mb-6 transition-transform group-hover:scale-110 duration-500 bg-[#FFFFFF]/5`}>
+                                            {project.icon}
+                                        </div>
+
+                                        <div className="absolute top-6 right-6">
+                                            <span className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border ${status.badgeClass}`}>
+                                                <CircleDot size={12} /> {status.label}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="text-2xl font-bold mb-3 group-hover:text-[#FFFFFF] transition-colors">
+                                            {project.title}
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2 mb-6">
+                                            {project.tech.map((t) => (
+                                                <span key={t} className={`text-xs font-bold tracking-wide uppercase px-3 py-1 rounded-full ${theme.techBadge}`}>
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <p
+                                            className={`text-base leading-relaxed mb-8 ${theme.textMuted}`}
+                                            style={{
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden'
+                                            }}
+                                        >
+                                            {project.desc}
+                                        </p>
+                                        <div className={`h-2 w-2 rounded-full ${status.dotClass}`} />
                                     </div>
 
-                                    {/* Status Signal */}
-                                    <div className="absolute top-6 right-6 flex items-center gap-3">
-                                        {project.status === 'active' && (
-                                            <span className={`text-xs font-medium text-green-400`}>
-                                                Under development
-                                            </span>
-                                        )}
-                                        {project.status === 'completed' && (
-                                            <span className={`text-xs font-medium text-orange-400`}>
-                                                Completed
-                                            </span>
-                                        )}
-                                        {project.status === 'abandoned' && (
-                                            <span className={`text-xs font-medium text-red-400`}>
-                                                Abandoned
-                                            </span>
-                                        )}
-
-                                        <div className={`w-3 h-3 rounded-full ${project.status === 'active' ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                                            project.status === 'abandoned' ? 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                                'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'
-                                            }`} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold mb-3 group-hover:text-[#FFFFFF] transition-colors">
-                                        {project.title}
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2 mb-6">
-                                        {project.tech.map((t) => (
-                                            <span key={t} className={`text-xs font-bold tracking-wide uppercase px-3 py-1 rounded-full ${theme.techBadge}`}>
-                                                {t}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <p className={`text-base leading-relaxed mb-8 ${theme.textMuted}`}>
-                                        {project.desc}
-                                    </p>
-                                </div>
-
-                                <div className={`mt-auto pt-6 border-t border-[#333333] flex items-center gap-6`}>
-                                    <a
-                                        href={project.githubLink || project.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm font-bold flex items-center gap-2 hover:underline decoration-2 underline-offset-4"
-                                    >
-                                        View Code <ExternalLink size={16} />
-                                    </a>
-                                    {project.liveLink && (
+                                    <div className="mt-auto pt-6 border-t border-[#333333] flex items-center gap-3 flex-wrap">
                                         <a
-                                            href={project.liveLink}
+                                            href={project.githubLink || project.link}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-sm font-bold flex items-center gap-2 hover:underline decoration-2 underline-offset-4"
+                                            className="btn-secondary inline-flex items-center gap-2 text-sm font-bold"
                                         >
-                                            Live Demo <ExternalLink size={16} />
+                                            View Code <ExternalLink size={16} />
                                         </a>
-                                    )}
+                                        {project.liveLink && (
+                                            <a
+                                                href={project.liveLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg bg-[#EDEDED] text-black hover:bg-white interactive-focus"
+                                            >
+                                                Live Demo <ExternalLink size={16} />
+                                            </a>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </Reveal>
-                    ))}
+                            </Reveal>
+                        );
+                    })}
                 </div>
             </div>
         </section>

@@ -14,7 +14,7 @@ const Contact = ({ theme }) => {
 
                     <a
                         href="mailto:desreayan@gmail.com"
-                        className={`inline-flex items-center gap-3 px-10 py-5 rounded-xl font-bold text-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${theme.button}`}
+                        className={`inline-flex items-center gap-3 px-10 py-5 rounded-xl font-bold text-xl transition-all duration-300 hover:scale-105 hover:shadow-xl interactive-focus ${theme.button}`}
                     >
                         <Mail size={24} /> Say Hello
                     </a>
