@@ -5,11 +5,12 @@ const Reveal = ({ children, delay = 0 }) => {
     const ref = useRef(null);
 
     useEffect(() => {
+        const currentRef = ref.current;
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
                     setIsVisible(true);
-                    observer.unobserve(ref.current);
+                    observer.unobserve(entry.target);
                 }
             },
             {
@@ -18,12 +19,12 @@ const Reveal = ({ children, delay = 0 }) => {
             }
         );
 
-        if (ref.current) {
-            observer.observe(ref.current);
+        if (currentRef) {
+            observer.observe(currentRef);
         }
 
         return () => {
-            if (ref.current) observer.disconnect();
+            observer.disconnect();
         };
     }, []);
 

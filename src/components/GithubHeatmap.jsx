@@ -5,6 +5,7 @@ import Reveal from './Reveal';
 
 const GithubHeatmap = ({ theme }) => {
     const [isMobile, setIsMobile] = useState(false);
+    const currentYear = new Date().getFullYear();
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -13,7 +14,7 @@ const GithubHeatmap = ({ theme }) => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Custom theme for 2026 - GitHub Green
+    // Custom GitHub green palette
     const customTheme = {
         light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
         dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
@@ -24,7 +25,7 @@ const GithubHeatmap = ({ theme }) => {
             <div className="max-w-5xl mx-auto">
                 <Reveal>
                     <h2 className="text-3xl md:text-4xl font-bold mb-12 flex items-center gap-4">
-                        <Github className={theme.accent} size={32} /> 2026 Contributions
+                        <Github className={theme.accent} size={32} /> {currentYear} Contributions
                     </h2>
                 </Reveal>
 
@@ -34,7 +35,7 @@ const GithubHeatmap = ({ theme }) => {
                             <div className="w-full">
                                 <GitHubCalendar
                                     username="sYanXO"
-                                    year={2026}
+                                    year={currentYear}
                                     theme={customTheme}
                                     blockSize={10}
                                     blockMargin={3}
@@ -54,7 +55,7 @@ const GithubHeatmap = ({ theme }) => {
                         ) : (
                             <GitHubCalendar
                                 username="sYanXO"
-                                year={2026}
+                                year={currentYear}
                                 theme={customTheme}
                                 blockSize={14}
                                 blockMargin={4}

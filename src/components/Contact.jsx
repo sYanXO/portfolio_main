@@ -3,6 +3,8 @@ import { Mail } from 'lucide-react';
 import Reveal from './Reveal';
 
 const Contact = ({ theme }) => {
+    const currentYear = new Date().getFullYear();
+
     return (
         <section id="contact" className={`py-32 px-6 mt-10 border-t border-[#333333]`}>
             <Reveal>
@@ -20,7 +22,7 @@ const Contact = ({ theme }) => {
                     </a>
 
                     <div className={`mt-24 text-sm font-medium ${theme.textMuted}`}>
-                        <p>&copy; 2025 Sreayan. Built with React & Tailwind.</p>
+                        <p>&copy; {currentYear} Sreayan. Built with React & Tailwind.</p>
                     </div>
                 </div>
             </Reveal>

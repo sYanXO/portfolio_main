@@ -37,7 +37,7 @@ export const education = [
     }
 ];
 
-export const getProjects = () => [
+export const projects = [
     {
         title: "OptiShrink",
         tech: ["REACT", "VITE", "Javascript"],
@@ -75,7 +75,7 @@ export const getProjects = () => [
         title: "Vercel Clone",
         tech: ["React", "AWS S3", "Redis", "Docker"],
         desc: "Automated deployment platform for static sites. Uses SQS for decoupling builds and S3 for storage, mimicking core Vercel architecture.",
-        link: "#",
+        link: null,
         status: "abandoned",
         icon: <Server className="text-[#EDEDED]" />
     }

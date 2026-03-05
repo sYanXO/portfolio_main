@@ -1,7 +1,7 @@
 import React from 'react';
 import { Code, ExternalLink, CircleDot } from 'lucide-react';
 import Reveal from './Reveal';
-import { getProjects } from '../data/index.jsx';
+import { projects } from '../data/index.jsx';
 
 const statusConfig = {
     active: {
@@ -22,8 +22,6 @@ const statusConfig = {
 };
 
 const Projects = ({ theme }) => {
-    const projects = getProjects();
-
     return (
         <section id="projects" className="py-32 px-6">
             <div className="max-w-6xl mx-auto">
@@ -36,12 +34,13 @@ const Projects = ({ theme }) => {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {projects.map((project, idx) => {
                         const status = statusConfig[project.status] || statusConfig.completed;
+                        const codeLink = project.githubLink || project.link;
 
                         return (
                             <Reveal key={idx} delay={idx * 100}>
                                 <div className={`group relative p-8 rounded-2xl flex flex-col h-full transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${theme.cardGlass}`}>
                                     <div className="mb-6">
-                                        <div className={`inline-flex p-4 rounded-xl bg-opacity-10 mb-6 transition-transform group-hover:scale-110 duration-500 bg-[#FFFFFF]/5`}>
+                                        <div className="inline-flex p-4 rounded-xl bg-opacity-10 mb-6 transition-transform group-hover:scale-110 duration-500 bg-[#FFFFFF]/5">
                                             {project.icon}
                                         </div>
 
@@ -76,14 +75,20 @@ const Projects = ({ theme }) => {
                                     </div>
 
                                     <div className="mt-auto pt-6 border-t border-[#333333] flex items-center gap-3 flex-wrap">
-                                        <a
-                                            href={project.githubLink || project.link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn-secondary inline-flex items-center gap-2 text-sm font-bold"
-                                        >
-                                            View Code <ExternalLink size={16} />
-                                        </a>
+                                        {codeLink ? (
+                                            <a
+                                                href={codeLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn-secondary inline-flex items-center gap-2 text-sm font-bold"
+                                            >
+                                                View Code <ExternalLink size={16} />
+                                            </a>
+                                        ) : (
+                                            <span className={`text-sm font-bold opacity-60 ${theme.textMuted}`}>
+                                                Code unavailable
+                                            </span>
+                                        )}
                                         {project.liveLink && (
                                             <a
                                                 href={project.liveLink}
