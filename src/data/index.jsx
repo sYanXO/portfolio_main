@@ -39,9 +39,18 @@ export const education = [
 
 export const projects = [
     {
+        title: "Stake IPL",
+        tech: ["Next.js 15", "React 19", "TypeScript", "Prisma", "PostgreSQL"],
+        desc: "Full-stack IPL prediction platform with fictional coins, admin-managed markets, and live leaderboards.",
+        githubLink: "https://github.com/sYanXO/Steak",
+        liveLink: "https://steak-hjli.vercel.app/",
+        status: "active",
+        icon: <Database className="text-[#EDEDED]" />
+    },
+    {
         title: "OptiShrink",
         tech: ["REACT", "VITE", "Javascript"],
-        desc: "A lightning-fast, client-side only image compressor designed to strictly meet specific file size targets (100kb, 50kb, 20kb). It processes user-provided images entirely in the browser, ensuring complete privacy, zero server uploads, and no downtime.",
+        desc: "Client-side image compressor built to hit strict file-size targets with no uploads or backend dependency.",
         githubLink: "https://github.com/sYanXO/Opti-Shrink",
         liveLink: "https://opti-shrink.vercel.app/",
         status: "active",
@@ -50,7 +59,7 @@ export const projects = [
     {
         title: "DB Uploader",
         tech: ["Golang", "Concurrency", "PostgreSQL"],
-        desc: "High-performance Go application designed to efficiently read large JSON datasets and upload them to a database using concurrent workers.",
+        desc: "High-throughput Go uploader for ingesting large JSON datasets into PostgreSQL with concurrent workers.",
         link: "https://github.com/sYanXO/db-uploader",
         status: "active",
         icon: <Database className="text-[#EDEDED]" />
@@ -58,7 +67,7 @@ export const projects = [
     {
         title: "Go-Arbitrage-Bot",
         tech: ["Golang", "Concurrency", "WebSockets"],
-        desc: "High-concurrency CLI tool detecting price anomalies across Binance & Coinbase. Implemented Fan-In/Fan-Out patterns to handle asynchronous data streams without lock contention.",
+        desc: "Concurrent CLI bot that monitors exchange feeds and detects arbitrage gaps across Binance and Coinbase.",
         link: "https://github.com/sYanXO/arb-bot",
         status: "completed",
         icon: <Cpu className="text-[#EDEDED]" />
@@ -66,7 +75,7 @@ export const projects = [
     {
         title: "Market-Neutral Quant Strategy",
         tech: ["Python", "Pandas", "Finance", "ML"],
-        desc: "Backtested mean reversion strategy on 60+ tickers achieving 13.46% cumulative return. Implemented dynamic stop-loss (ATR-based) and regime filtering.",
+        desc: "Backtested mean reversion strategy with regime filters and ATR-based risk controls across 60+ tickers.",
         link: "https://github.com/sYanXO/NSE-meanReversion-strategy",
         status: "completed",
         icon: <TrendingUp className="text-[#EDEDED]" />
@@ -74,7 +83,7 @@ export const projects = [
     {
         title: "Vercel Clone",
         tech: ["React", "AWS S3", "Redis", "Docker"],
-        desc: "Automated deployment platform for static sites. Uses SQS for decoupling builds and S3 for storage, mimicking core Vercel architecture.",
+        desc: "Static-site deployment platform exploring queued builds, object storage, and Vercel-style architecture.",
         link: null,
         status: "abandoned",
         icon: <Server className="text-[#EDEDED]" />

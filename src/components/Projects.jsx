@@ -71,7 +71,6 @@ const Projects = ({ theme }) => {
                                         >
                                             {project.desc}
                                         </p>
-                                        <div className={`h-2 w-2 rounded-full ${status.dotClass}`} />
                                     </div>
 
                                     <div className="mt-auto pt-6 border-t border-[#333333] flex items-center gap-3 flex-wrap">
