@@ -19,10 +19,10 @@ const Navbar = ({
 }) => {
     return (
         <nav className={`fixed w-full z-50 transition-all duration-500 ${theme.glass}`}>
-            <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3 md:py-4 flex justify-between items-center">
                 <button
                     type="button"
-                    className="text-xl font-bold tracking-tighter cursor-pointer flex items-center gap-2 group interactive-focus"
+                    className="text-lg sm:text-xl font-bold tracking-tighter cursor-pointer flex items-center gap-2 group interactive-focus"
                     onClick={() => scrollToSection('home')}
                 >
                     <Terminal size={24} className={`${theme.accent} transition-transform group-hover:rotate-12`} />
@@ -30,7 +30,7 @@ const Navbar = ({
                 </button>
 
                 {/* Desktop Menu */}
-                <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+                <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium">
                     {navItems.map((item) => (
                         <button
                             key={item.id}

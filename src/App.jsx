@@ -12,7 +12,6 @@ const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
 
-  // Handle scroll to highlight active section
   useEffect(() => {
     const handleScroll = () => {
       const sections = ['home', 'experience', 'projects', 'skills', 'activity', 'education', 'contact'];
@@ -38,7 +37,6 @@ const App = () => {
     }
   };
 
-  // Theme classes - Vercel Style (Dark Minimalist)
   const theme = {
     bg: 'bg-[#000000]',
     text: 'text-[#EDEDED]',
