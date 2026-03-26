@@ -24,7 +24,7 @@ const GithubHeatmap = ({ theme }) => {
         <section id="activity" className="py-20 px-6">
             <div className="max-w-5xl mx-auto">
                 <Reveal>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-12 flex items-center gap-4">
+                    <h2 className="section-title mb-12 flex items-center gap-4">
                         <Github className={theme.accent} size={32} /> {currentYear} Contributions
                     </h2>
                 </Reveal>
@@ -47,7 +47,7 @@ const GithubHeatmap = ({ theme }) => {
                                     href="https://github.com/sYanXO"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="mt-4 inline-flex text-sm font-semibold underline underline-offset-4 interactive-focus"
+                                    className="mt-4 inline-flex text-sm font-semibold tracking-[-0.01em] underline underline-offset-4 interactive-focus"
                                 >
                                     View full activity on GitHub
                                 </a>

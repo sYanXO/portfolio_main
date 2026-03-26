@@ -22,7 +22,7 @@ const Navbar = ({
             <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3 md:py-4 flex justify-between items-center">
                 <button
                     type="button"
-                    className="text-lg sm:text-xl font-bold tracking-tighter cursor-pointer flex items-center gap-2 group interactive-focus"
+                    className="text-lg sm:text-xl font-semibold tracking-[-0.04em] cursor-pointer flex items-center gap-2 group interactive-focus font-display"
                     onClick={() => scrollToSection('home')}
                 >
                     <Terminal size={24} className={`${theme.accent} transition-transform group-hover:rotate-12`} />
@@ -30,7 +30,7 @@ const Navbar = ({
                 </button>
 
                 {/* Desktop Menu */}
-                <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium">
+                <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium tracking-[-0.01em]">
                     {navItems.map((item) => (
                         <button
                             key={item.id}
@@ -63,7 +63,7 @@ const Navbar = ({
                         <button
                             key={item.id}
                             onClick={() => scrollToSection(item.id)}
-                            className={`block w-full text-left py-3 font-medium hover:pl-2 transition-all hover:text-[#FFFFFF] ${activeSection === item.id ? 'text-[#FFFFFF]' : 'text-[#888888]'} interactive-focus`}
+                            className={`block w-full text-left py-3 font-medium tracking-[-0.01em] hover:pl-2 transition-all hover:text-[#FFFFFF] ${activeSection === item.id ? 'text-[#FFFFFF]' : 'text-[#888888]'} interactive-focus`}
                         >
                             {item.label}
                         </button>

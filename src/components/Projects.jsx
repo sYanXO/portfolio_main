@@ -26,7 +26,7 @@ const Projects = ({ theme }) => {
         <section id="projects" className="py-20 md:py-24 lg:py-32 px-5 sm:px-6">
             <div className="max-w-6xl mx-auto">
                 <Reveal>
-                    <h2 className="text-3xl md:text-4xl font-bold mb-12 md:mb-14 lg:mb-16 flex items-center gap-4">
+                    <h2 className="section-title mb-12 md:mb-14 lg:mb-16 flex items-center gap-4">
                         <Code className={theme.accent} size={32} /> Featured Projects
                     </h2>
                 </Reveal>
@@ -45,23 +45,23 @@ const Projects = ({ theme }) => {
                                         </div>
 
                                         <div className="absolute top-5 right-5 md:top-6 md:right-6">
-                                            <span className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full border ${status.badgeClass}`}>
+                                            <span className={`inline-flex items-center gap-2 text-xs font-semibold tracking-[0.06em] px-3 py-1 rounded-full border ${status.badgeClass}`}>
                                                 <CircleDot size={12} /> {status.label}
                                             </span>
                                         </div>
 
-                                        <h3 className="text-xl sm:text-2xl font-bold mb-3 group-hover:text-[#FFFFFF] transition-colors">
+                                        <h3 className="card-title text-xl sm:text-2xl mb-3 group-hover:text-[#FFFFFF] transition-colors">
                                             {project.title}
                                         </h3>
                                         <div className="flex flex-wrap gap-2 mb-5 md:mb-6">
                                             {project.tech.map((t) => (
-                                                <span key={t} className={`text-xs font-bold tracking-wide uppercase px-3 py-1 rounded-full ${theme.techBadge}`}>
+                                                <span key={t} className={`text-xs font-semibold tracking-[0.08em] uppercase px-3 py-1 rounded-full ${theme.techBadge}`}>
                                                     {t}
                                                 </span>
                                             ))}
                                         </div>
                                         <p
-                                            className={`text-sm md:text-base leading-relaxed mb-6 md:mb-8 ${theme.textMuted}`}
+                                            className={`text-sm md:text-[0.96rem] leading-7 mb-6 md:mb-8 ${theme.textMuted}`}
                                             style={{
                                                 display: '-webkit-box',
                                                 WebkitLineClamp: 3,
@@ -79,12 +79,12 @@ const Projects = ({ theme }) => {
                                                 href={codeLink}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="btn-secondary inline-flex items-center gap-2 text-sm font-bold"
+                                                className="btn-secondary inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.01em]"
                                             >
                                                 View Code <ExternalLink size={16} />
                                             </a>
                                         ) : (
-                                            <span className={`text-sm font-bold opacity-60 ${theme.textMuted}`}>
+                                            <span className={`text-sm font-semibold opacity-60 ${theme.textMuted}`}>
                                                 Code unavailable
                                             </span>
                                         )}
@@ -93,7 +93,7 @@ const Projects = ({ theme }) => {
                                                 href={project.liveLink}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg bg-[#EDEDED] text-black hover:bg-white interactive-focus"
+                                                className="inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.01em] px-4 py-2 rounded-lg bg-[#EDEDED] text-black hover:bg-white interactive-focus"
                                             >
                                                 Live Demo <ExternalLink size={16} />
                                             </a>

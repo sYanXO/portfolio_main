@@ -51,7 +51,7 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen font-sans selection:bg-[#333333] selection:text-[#EDEDED] ${theme.bg} ${theme.text}`}>
+    <div className={`min-h-screen font-display selection:bg-[#333333] selection:text-[#EDEDED] ${theme.bg} ${theme.text}`}>
 
       <Navbar
         isMenuOpen={isMenuOpen}
