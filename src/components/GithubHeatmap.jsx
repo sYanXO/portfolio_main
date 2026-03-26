@@ -21,10 +21,10 @@ const GithubHeatmap = ({ theme }) => {
     };
 
     return (
-        <section id="activity" className="py-20 px-6">
+        <section id="activity" className="py-16 md:py-20 px-6">
             <div className="max-w-5xl mx-auto">
                 <Reveal>
-                    <h2 className="section-title mb-12 flex items-center gap-4">
+                    <h2 className="section-title mb-10 md:mb-12 flex items-center gap-4">
                         <Github className={theme.accent} size={32} /> {currentYear} Contributions
                     </h2>
                 </Reveal>
@@ -41,7 +41,7 @@ const GithubHeatmap = ({ theme }) => {
                                     blockMargin={3}
                                     fontSize={11}
                                     showWeekdayLabels={false}
-                                    style={{ color: '#EDEDED' }}
+                                    style={{ color: '#D8E7EE' }}
                                 />
                                 <a
                                     href="https://github.com/sYanXO"
@@ -61,7 +61,7 @@ const GithubHeatmap = ({ theme }) => {
                                 blockMargin={4}
                                 fontSize={14}
                                 showWeekdayLabels={true}
-                                style={{ color: '#EDEDED' }}
+                                style={{ color: '#D8E7EE' }}
                             />
                         )}
                     </div>

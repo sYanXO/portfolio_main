@@ -5,10 +5,10 @@ import { education } from '../data/index.jsx';
 
 const Education = ({ theme }) => {
     return (
-        <section id="education" className="py-20 md:py-24 lg:py-32 px-5 sm:px-6">
+        <section id="education" className="py-16 md:py-20 lg:py-24 px-5 sm:px-6">
             <div className="max-w-4xl mx-auto">
                 <Reveal>
-                    <h2 className="section-title mb-12 md:mb-14 lg:mb-16 flex items-center gap-4">
+                    <h2 className="section-title mb-10 md:mb-12 lg:mb-14 flex items-center gap-4">
                         <GraduationCap className={theme.accent} size={32} /> Education
                     </h2>
                 </Reveal>
@@ -28,7 +28,7 @@ const Education = ({ theme }) => {
                                     </div>
                                 </div>
                                 <div className={`text-left md:text-right`}>
-                                    <span className={`inline-block px-6 py-3 rounded-full text-sm font-semibold tracking-[0.08em] border shadow-lg border-[#333333] text-[#EDEDED] bg-[#111111]`}>
+                                    <span className={`inline-block px-6 py-3 rounded-full text-sm font-semibold tracking-[0.08em] border shadow-lg ${theme.chip}`}>
                                         {edu.period}
                                     </span>
                                 </div>

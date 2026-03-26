@@ -35,7 +35,7 @@ const Navbar = ({
                         <button
                             key={item.id}
                             onClick={() => scrollToSection(item.id)}
-                            className={`relative interactive-focus hover:text-[#FFFFFF] transition-colors ${activeSection === item.id ? theme.accent : 'text-[#888888]'} after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full`}
+                            className={`relative interactive-focus transition-colors ${activeSection === item.id ? theme.accent : theme.textMuted} ${theme.accentStrongHover} after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full`}
                         >
                             {item.label}
                         </button>
@@ -63,7 +63,7 @@ const Navbar = ({
                         <button
                             key={item.id}
                             onClick={() => scrollToSection(item.id)}
-                            className={`block w-full text-left py-3 font-medium tracking-[-0.01em] hover:pl-2 transition-all hover:text-[#FFFFFF] ${activeSection === item.id ? 'text-[#FFFFFF]' : 'text-[#888888]'} interactive-focus`}
+                            className={`block w-full text-left py-3 font-medium tracking-[-0.01em] hover:pl-2 transition-all ${theme.accentStrongHover} ${activeSection === item.id ? theme.accentStrong : theme.textMuted} interactive-focus`}
                         >
                             {item.label}
                         </button>

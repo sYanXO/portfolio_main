@@ -23,10 +23,10 @@ const statusConfig = {
 
 const Projects = ({ theme }) => {
     return (
-        <section id="projects" className="py-20 md:py-24 lg:py-32 px-5 sm:px-6">
+        <section id="projects" className="py-16 md:py-20 lg:py-24 px-5 sm:px-6">
             <div className="max-w-6xl mx-auto">
                 <Reveal>
-                    <h2 className="section-title mb-12 md:mb-14 lg:mb-16 flex items-center gap-4">
+                    <h2 className="section-title mb-10 md:mb-12 lg:mb-14 flex items-center gap-4">
                         <Code className={theme.accent} size={32} /> Featured Projects
                     </h2>
                 </Reveal>
@@ -40,7 +40,7 @@ const Projects = ({ theme }) => {
                             <Reveal key={idx} delay={idx * 100}>
                                 <div className={`group relative p-6 md:p-7 lg:p-8 rounded-2xl flex flex-col h-full transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${theme.cardGlass}`}>
                                     <div className="mb-5 md:mb-6">
-                                        <div className="inline-flex p-3 md:p-4 rounded-xl bg-opacity-10 mb-5 md:mb-6 transition-transform group-hover:scale-110 duration-500 bg-[#FFFFFF]/5">
+                                        <div className={`inline-flex p-3 md:p-4 rounded-xl mb-5 md:mb-6 transition-transform group-hover:scale-110 duration-500 ${theme.iconGlow}`}>
                                             {project.icon}
                                         </div>
 
@@ -50,7 +50,7 @@ const Projects = ({ theme }) => {
                                             </span>
                                         </div>
 
-                                        <h3 className="card-title text-xl sm:text-2xl mb-3 group-hover:text-[#FFFFFF] transition-colors">
+                                        <h3 className="card-title text-xl sm:text-2xl mb-3 group-hover:text-[#F2FAFF] transition-colors">
                                             {project.title}
                                         </h3>
                                         <div className="flex flex-wrap gap-2 mb-5 md:mb-6">
@@ -73,7 +73,7 @@ const Projects = ({ theme }) => {
                                         </p>
                                     </div>
 
-                                    <div className="mt-auto pt-5 md:pt-6 border-t border-[#333333] flex items-center gap-3 flex-wrap">
+                                    <div className={`mt-auto pt-5 md:pt-6 border-t ${theme.borderSoft} flex items-center gap-3 flex-wrap`}>
                                         {codeLink ? (
                                             <a
                                                 href={codeLink}
@@ -93,7 +93,7 @@ const Projects = ({ theme }) => {
                                                 href={project.liveLink}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.01em] px-4 py-2 rounded-lg bg-[#EDEDED] text-black hover:bg-white interactive-focus"
+                                                className="inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.01em] px-4 py-2 rounded-lg bg-[#CFE7F3] text-[#011122] hover:bg-[#F2FAFF] interactive-focus"
                                             >
                                                 Live Demo <ExternalLink size={16} />
                                             </a>

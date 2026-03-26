@@ -36,10 +36,10 @@
   }
 
   .interactive-focus {
-    @apply rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black motion-reduce:transition-none;
+    @apply rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CFE7F3] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1215] motion-reduce:transition-none;
   }
 
   .btn-secondary {
-    @apply px-3.5 py-2 md:px-4 rounded-lg border border-[#333333] text-[#EDEDED] transition-all duration-300 hover:border-[#EDEDED] hover:bg-[#1A1A1A] interactive-focus;
+    @apply px-3.5 py-2 md:px-4 rounded-lg border border-[#233342] text-[#D8E7EE] transition-all duration-300 hover:border-[#3C5568] hover:bg-[#161616] interactive-focus;
   }
 }

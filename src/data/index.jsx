@@ -91,8 +91,8 @@ export const projects = [
 ];
 
 export const skills = [
-    { category: "Languages", items: ["Golang", "C++", "Python", "TypeScript", "JavaScript"] },
-    { category: "Backend & Cloud", items: ["AWS S3", "Redis", "PostgreSQL", "MongoDB", "Node.js"] },
-    { category: "Frontend", items: ["React.js", "Tailwind", "HTML/CSS"] },
+    { category: "Languages", items: ["Golang", "TypeScript", "Python", "C++", "JavaScript"] },
+    { category: "Backend & Infra", items: ["Node.js", "PostgreSQL", "Prisma", "Auth.js", "Neon", "Docker", "Prometheus"] },
+    { category: "Frontend", items: ["Next.js", "React", "Tailwind CSS", "App Router"] },
     { category: "Data & ML", items: ["Pandas", "NumPy", "PyTorch", "Matplotlib"] },
 ];
