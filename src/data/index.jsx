@@ -39,6 +39,14 @@ export const education = [
 
 export const projects = [
     {
+        title: "DB Uploader",
+        tech: ["Golang", "Concurrency", "PostgreSQL"],
+        desc: "Benchmarked Go ingestion pipeline for large JSON datasets into PostgreSQL, built around concurrent workers to maximize throughput under load.",
+        link: "https://github.com/sYanXO/db-uploader",
+        status: "active",
+        icon: <Database className="text-[#EDEDED]" />
+    },
+    {
         title: "Stake IPL",
         tech: ["Next.js 15", "React 19", "TypeScript", "Prisma", "PostgreSQL"],
         desc: "Full-stack IPL prediction platform with fictional coins, admin-managed markets, and live leaderboards.",
@@ -55,14 +63,6 @@ export const projects = [
         liveLink: "https://opti-shrink.vercel.app/",
         status: "active",
         icon: <Layers className="text-[#EDEDED]" />
-    },
-    {
-        title: "DB Uploader",
-        tech: ["Golang", "Concurrency", "PostgreSQL"],
-        desc: "High-throughput Go uploader for ingesting large JSON datasets into PostgreSQL with concurrent workers.",
-        link: "https://github.com/sYanXO/db-uploader",
-        status: "active",
-        icon: <Database className="text-[#EDEDED]" />
     },
     {
         title: "Go-Arbitrage-Bot",

@@ -31,7 +31,7 @@ const Hero = ({ theme, scrollToSection }) => {
                             Contact Me
                         </a>
                         <a
-                            href="https://drive.google.com/file/d/1gTS-aQkdQ7ij4GWpq2uo_RnFFHRIZO0C/view?usp=sharing"
+                            href="https://drive.google.com/file/d/1j5ZqrJQD6dl32i5z0Rc9J27M_F5zzyeS/view?usp=sharing"
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`px-6 py-3.5 md:px-8 md:py-4 rounded-lg font-semibold tracking-[-0.02em] border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex items-center gap-2 interactive-focus ${theme.secondaryButton}`}
