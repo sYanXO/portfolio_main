@@ -14,23 +14,39 @@ const GithubHeatmap = ({ theme }) => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Custom GitHub green palette
     const customTheme = {
-        light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-        dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+        light: ['#111111', '#333333', '#666666', '#999999', '#FFFFFF'],
+        dark: ['#111111', '#333333', '#666666', '#999999', '#FFFFFF'],
     };
 
     return (
-        <section id="activity" className="py-16 md:py-20 px-6">
+        <section id="activity" className="px-5 py-16 sm:px-6 md:py-20">
             <div className="max-w-5xl mx-auto">
                 <Reveal>
-                    <h2 className="section-title mb-10 md:mb-12 flex items-center gap-4">
-                        <Github className={theme.accent} size={32} /> {currentYear} Contributions
-                    </h2>
+                    <div className="mb-10 border-b border-[#222222] pb-6 md:mb-12">
+                        <div className="eyebrow-copy text-[#999999]">[ ACTIVITY ]</div>
+                        <h2 className="section-title mt-3 flex items-center gap-4">
+                            <Github className={theme.accent} size={28} /> {currentYear} Contributions
+                        </h2>
+                    </div>
                 </Reveal>
 
                 <Reveal>
-                    <div className={`p-4 md:p-8 rounded-3xl border transition-all duration-500 hover:shadow-2xl overflow-x-auto ${theme.cardGlass} flex justify-center`}>
+                    <div className={`overflow-x-auto border p-4 md:p-8 ${theme.cardGlass}`}>
+                        <div className="mb-5 flex items-center justify-between gap-4 border-b border-[#222222] pb-4">
+                            <div>
+                                <div className="label-copy text-[#666666]">SOURCE</div>
+                                <div className="mt-2 font-body text-base text-[#E8E8E8]">github.com/sYanXO</div>
+                            </div>
+                            <a
+                                href="https://github.com/sYanXO"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="interactive-focus inline-flex min-h-11 items-center border px-4 py-2 font-label text-[12px] uppercase tracking-[0.08em] text-[#E8E8E8] hover:border-[#FFFFFF] hover:text-[#FFFFFF]"
+                            >
+                                [ Open Profile ]
+                            </a>
+                        </div>
                         {isMobile ? (
                             <div className="w-full">
                                 <GitHubCalendar
@@ -41,16 +57,8 @@ const GithubHeatmap = ({ theme }) => {
                                     blockMargin={3}
                                     fontSize={11}
                                     showWeekdayLabels={false}
-                                    style={{ color: '#D8E7EE' }}
+                                    style={{ color: '#E8E8E8' }}
                                 />
-                                <a
-                                    href="https://github.com/sYanXO"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="mt-4 inline-flex text-sm font-semibold tracking-[-0.01em] underline underline-offset-4 interactive-focus"
-                                >
-                                    View full activity on GitHub
-                                </a>
                             </div>
                         ) : (
                             <GitHubCalendar
@@ -61,7 +69,7 @@ const GithubHeatmap = ({ theme }) => {
                                 blockMargin={4}
                                 fontSize={14}
                                 showWeekdayLabels={true}
-                                style={{ color: '#D8E7EE' }}
+                                style={{ color: '#E8E8E8' }}
                             />
                         )}
                     </div>

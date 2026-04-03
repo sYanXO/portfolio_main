@@ -5,32 +5,38 @@ import { experiences } from '../data/index.jsx';
 
 const Experience = ({ theme }) => {
     return (
-        <section id="experience" className="py-16 md:py-20 lg:py-24 px-5 sm:px-6">
+        <section id="experience" className="px-5 py-16 sm:px-6 md:py-20 lg:py-24">
             <div className="max-w-5xl mx-auto">
                 <Reveal>
-                    <h2 className="section-title mb-10 md:mb-12 lg:mb-14 flex items-center gap-4">
-                        <Briefcase className={theme.accent} size={32} /> Experience
-                    </h2>
+                    <div className="mb-10 border-b border-[#222222] pb-6 md:mb-12 lg:mb-14">
+                        <div className="eyebrow-copy text-[#999999]">[ EXPERIENCE ]</div>
+                        <h2 className="section-title mt-3 flex items-center gap-4">
+                            <Briefcase className={theme.accent} size={28} /> Selected Work
+                        </h2>
+                    </div>
                 </Reveal>
 
                 <div className="space-y-6 md:space-y-8">
                     {experiences.map((exp, idx) => (
                         <Reveal key={idx} delay={idx * 200}>
-                            <div className={`group relative p-6 md:p-7 lg:p-8 rounded-3xl border transition-all duration-500 hover:shadow-2xl ${theme.cardGlass}`}>
-                                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-                                    <div className="md:w-1/4 flex-shrink-0 flex flex-col items-start">
-                                        <span className={`font-display text-4xl md:text-5xl font-semibold tracking-[-0.05em] opacity-10 mb-2 select-none`}>0{idx + 1}</span>
-                                        <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold tracking-[0.08em] border ${theme.chip}`}>
+                            <div className={`group relative border p-6 md:p-7 lg:p-8 ${theme.cardGlass}`}>
+                                <div className="flex flex-col gap-6 md:flex-row md:gap-8">
+                                    <div className="md:w-[180px] md:flex-shrink-0">
+                                        <div className="font-display text-5xl leading-none tracking-[-0.05em] text-[#333333] md:text-6xl">
+                                            0{idx + 1}
+                                        </div>
+                                        <span className={`mt-4 inline-flex border px-3 py-2 font-label text-[11px] uppercase tracking-[0.08em] ${theme.chip}`}>
                                             {exp.period}
                                         </span>
                                     </div>
 
-                                    <div className="md:w-3/4">
-                                        <h3 className="card-title text-xl sm:text-2xl md:text-3xl mb-2 group-hover:text-[#F2FAFF] transition-colors">{exp.role}</h3>
-                                        <div className={`text-base md:text-lg font-medium tracking-[-0.02em] mb-4 md:mb-6 flex items-center gap-2 ${theme.accentSecondary}`}>
+                                    <div className="flex-1">
+                                        <div className="label-copy text-[#666666]">ROLE</div>
+                                        <h3 className="card-title mt-2 text-xl text-[#FFFFFF] sm:text-2xl md:text-3xl">{exp.role}</h3>
+                                        <div className={`mt-3 flex items-center gap-2 text-base tracking-[-0.02em] md:text-lg ${theme.accentSecondary}`}>
                                             <Layers size={18} /> {exp.company}
                                         </div>
-                                        <p className={`body-copy ${theme.textMuted}`}>
+                                        <p className={`body-copy mt-5 border-t border-[#222222] pt-5 ${theme.textMuted}`}>
                                             {exp.desc}
                                         </p>
                                     </div>
