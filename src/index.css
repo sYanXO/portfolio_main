@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Doto:wght@400..700&family=Space+Grotesk:wght@300..700&family=Space+Mono:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,11 +6,14 @@
 
 @layer base {
   :root {
-    --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Doto", "Space Mono", monospace;
+    --font-body: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+    --font-label: "Space Mono", "JetBrains Mono", monospace;
   }
 
   body {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
+    background-color: #000000;
   }
 }
 
@@ -19,12 +22,20 @@
     font-family: var(--font-display);
   }
 
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .font-label {
+    font-family: var(--font-label);
+  }
+
   .section-title {
-    @apply font-display text-3xl font-semibold tracking-[-0.03em] md:text-4xl;
+    @apply font-body text-3xl font-medium tracking-[-0.03em] md:text-4xl;
   }
 
   .card-title {
-    @apply font-display font-semibold tracking-[-0.025em];
+    @apply font-body font-medium tracking-[-0.025em];
   }
 
   .body-copy {
@@ -32,7 +43,11 @@
   }
 
   .eyebrow-copy {
-    @apply text-[11px] font-semibold uppercase tracking-[0.22em] md:text-xs;
+    @apply font-label text-[11px] uppercase tracking-[0.22em] md:text-xs;
+  }
+
+  .label-copy {
+    @apply font-label text-[11px] uppercase tracking-[0.18em] md:text-xs;
   }
 
   .interactive-focus {

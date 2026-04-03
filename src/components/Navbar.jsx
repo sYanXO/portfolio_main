@@ -22,22 +22,22 @@ const Navbar = ({
             <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3 md:py-4 flex justify-between items-center">
                 <button
                     type="button"
-                    className="text-lg sm:text-xl font-semibold tracking-[-0.04em] cursor-pointer flex items-center gap-2 group interactive-focus font-display"
+                    className="text-lg sm:text-xl font-medium tracking-[-0.04em] cursor-pointer flex items-center gap-2 group interactive-focus font-body"
                     onClick={() => scrollToSection('home')}
                 >
-                    <Terminal size={24} className={`${theme.accent} transition-transform group-hover:rotate-12`} />
+                    <Terminal size={22} className={theme.accent} />
                     <span>Sreayan De</span>
                 </button>
 
                 {/* Desktop Menu */}
-                <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium tracking-[-0.01em]">
+                <div className="hidden md:flex items-center gap-6 lg:gap-8 text-sm uppercase tracking-[0.08em] font-label">
                     {navItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => scrollToSection(item.id)}
-                            className={`relative interactive-focus transition-colors ${activeSection === item.id ? theme.accent : theme.textMuted} ${theme.accentStrongHover} after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full`}
+                            className={`relative interactive-focus transition-colors ${activeSection === item.id ? theme.accent : theme.textMuted} ${theme.accentStrongHover}`}
                         >
-                            {item.label}
+                            {activeSection === item.id ? `[ ${item.label} ]` : item.label}
                         </button>
                     ))}
                 </div>
@@ -58,12 +58,12 @@ const Navbar = ({
 
             {/* Mobile Menu Dropdown */}
             {isMenuOpen && (
-                <div id="mobile-nav-menu" className={`md:hidden absolute w-full px-6 py-4 border-b ${theme.bg} ${theme.border} shadow-2xl`}>
+                <div id="mobile-nav-menu" className={`md:hidden absolute w-full px-6 py-4 border-b ${theme.bg} ${theme.border}`}>
                     {navItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => scrollToSection(item.id)}
-                            className={`block w-full text-left py-3 font-medium tracking-[-0.01em] hover:pl-2 transition-all ${theme.accentStrongHover} ${activeSection === item.id ? theme.accentStrong : theme.textMuted} interactive-focus`}
+                            className={`block w-full text-left py-3 font-label uppercase tracking-[0.08em] transition-colors ${theme.accentStrongHover} ${activeSection === item.id ? theme.accentStrong : theme.textMuted} interactive-focus`}
                         >
                             {item.label}
                         </button>
