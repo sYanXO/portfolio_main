@@ -47,7 +47,7 @@ const Blog = () => {
       <h1>Blog</h1>
 
       {posts.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)' }}>No posts yet.</p>
+        <p style={{ color: 'var(--text-muted)' }}>nothing here yet. soon™</p>
       ) : (
         <ul className="post-list">
           {posts.map((post) => (
