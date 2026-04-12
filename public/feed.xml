@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sreayan De</title>
+    <link>https://sreayan.dev</link>
+    <description>Writing about systems programming, distributed systems, and things I'm building.</description>
+    <language>en-us</language>
+    <atom:link href="https://sreayan.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Hello, world</title>
+      <link>https://sreayan.dev/blog/hello-world</link>
+      <guid>https://sreayan.dev/blog/hello-world</guid>
+      <pubDate>Sun, 12 Apr 2026 00:00:00 GMT</pubDate>
+      <description>First post — why I'm starting a blog, and what I hope to write about.</description>
+    </item>
+    <item>
+      <title>Building mini-git</title>
+      <link>https://sreayan.dev/blog/building-mini-git</link>
+      <guid>https://sreayan.dev/blog/building-mini-git</guid>
+      <pubDate>Fri, 10 Apr 2026 00:00:00 GMT</pubDate>
+      <description>Notes on implementing Git from scratch — the object model, hashing, and why plumbing commands matter.</description>
+    </item>
+  </channel>
+</rss>

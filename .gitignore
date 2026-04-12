@@ -13,7 +13,7 @@ dist
 skills
 dist-ssr
 *.local
-
+agent.md
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

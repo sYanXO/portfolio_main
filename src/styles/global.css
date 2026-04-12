@@ -1,0 +1,459 @@
+/* ===== Geist Fonts via Fontsource CDN ===== */
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-400-normal.css");
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-500-normal.css");
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-600-normal.css");
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-700-normal.css");
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-mono@latest/latin-400-normal.css");
+@import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-mono@latest/latin-500-normal.css");
+
+/* ===== highlight.js theme (GitHub-style, light) ===== */
+@import url("https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css");
+
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #f9f6f1;
+  --text: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --accent: #4a6fa5;
+  --accent-hover: #3b5d8e;
+  --border: #e0dbd4;
+  --font-body: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --content-width: 680px;
+  --line-height: 1.75;
+  --page-fade-duration: 200ms;
+}
+
+/* ===== Reset ===== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== Base ===== */
+html {
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--bg);
+  line-height: var(--line-height);
+}
+
+::selection {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== Layout ===== */
+.content-wrapper {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ===== Page Transition ===== */
+.page {
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+  min-height: calc(100vh - 140px);
+  animation: pageFadeIn var(--page-fade-duration) ease-out;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Typography ===== */
+h1, h2, h3, h4 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: 2.4rem;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1.25rem;
+}
+
+/* ===== Links ===== */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* ===== Lists ===== */
+ul, ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+li {
+  margin-bottom: 0.4rem;
+}
+
+li::marker {
+  color: var(--text-muted);
+}
+
+/* ===== Horizontal Rule ===== */
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}
+
+/* ===== Code ===== */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  background-color: rgba(0, 0, 0, 0.04);
+  padding: 1.25rem 1.5rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ===== Blockquotes ===== */
+blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ===== Navigation ===== */
+.site-nav {
+  padding: 1.5rem 0;
+}
+
+.site-nav .content-wrapper {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.site-nav .site-name {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav .site-name:hover {
+  color: var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  align-items: baseline;
+  gap: 1.75rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-links a {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 1.5px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.nav-links a.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+
+/* ===== Footer ===== */
+.site-footer {
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.site-footer .content-wrapper {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.site-footer .footer-links {
+  display: inline;
+}
+
+.site-footer .footer-links a {
+  color: var(--text-muted);
+}
+
+.site-footer .footer-links a:hover {
+  color: var(--accent);
+}
+
+.site-footer .footer-links .sep {
+  margin: 0 0.5rem;
+  color: var(--border);
+}
+
+/* ===== Home Page ===== */
+.home-bio {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  max-width: 600px;
+}
+
+.home-links {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.home-links a {
+  font-size: 0.9rem;
+}
+
+.currently-list {
+  color: var(--text-muted);
+}
+
+/* ===== Blog Index ===== */
+.post-list {
+  list-style: none;
+  padding: 0;
+}
+
+.post-item {
+  margin-bottom: 2rem;
+}
+
+.post-item a {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.post-item a:hover {
+  color: var(--accent);
+}
+
+.post-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  font-family: var(--font-mono);
+}
+
+.post-desc {
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+}
+
+/* ===== Blog Post ===== */
+.post-header {
+  margin-bottom: 2.5rem;
+}
+
+.post-header h1 {
+  margin-bottom: 0.75rem;
+}
+
+.post-header .post-meta {
+  margin-bottom: 0;
+}
+
+.post-body {
+  line-height: 1.8;
+}
+
+.post-body h2 {
+  margin-top: 2.5rem;
+}
+
+.post-body img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+}
+
+/* ===== Projects Page ===== */
+.project-list {
+  list-style: none;
+  padding: 0;
+}
+
+.project-item {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-item:first-child {
+  padding-top: 0;
+}
+
+.project-item:last-child {
+  border-bottom: none;
+}
+
+.project-name {
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.project-status {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-left: 0.5rem;
+  font-weight: 400;
+}
+
+.project-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.project-links {
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+}
+
+.project-links a {
+  margin-right: 1rem;
+}
+
+/* ===== About Page ===== */
+.book-list {
+  list-style: none;
+  padding: 0;
+}
+
+.book-list li {
+  margin-bottom: 0.75rem;
+}
+
+.book-title {
+  font-weight: 500;
+}
+
+.book-note {
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.book-rec {
+  color: var(--accent);
+  font-size: 0.85rem;
+  margin-left: 0.35rem;
+}
+
+/* ===== 404 Page ===== */
+.not-found {
+  text-align: center;
+  padding-top: 6rem;
+}
+
+.not-found h1 {
+  font-size: 4rem;
+  font-weight: 700;
+  opacity: 0.15;
+  margin-bottom: 0.5rem;
+}
+
+.not-found p {
+  color: var(--text-muted);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  html {
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  .content-wrapper {
+    padding: 0 1.25rem;
+  }
+
+  .nav-links {
+    gap: 1.25rem;
+  }
+
+  .page {
+    padding-top: 2rem;
+    padding-bottom: 3.5rem;
+  }
+}
