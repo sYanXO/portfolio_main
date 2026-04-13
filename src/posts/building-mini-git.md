@@ -1,10 +1,10 @@
 ---
 title: "building mini-git"
 date: "2026-04-13"
-description: "i'm building git from scratch in C++. session 1: SHA-1 hashing — the foundation everything else depends on."
+description: "i'm building git from scratch in C++."
 ---
 
-i'm building a minimal git clone from scratch in C++. not because anyone asked — but because git's internals are genuinely beautiful once you see past the cursed CLI. i'm calling it mini-git, and i'm documenting the whole thing as i go.
+i'm building a minimal git clone from scratch in C++ because git's internals are genuinely beautiful once you see past the cursed CLI. i'm calling it mini-git, and i'm documenting the whole thing as i go.
 
 this is session 1. we start where git starts: **SHA-1 hashing**.
 
@@ -49,7 +49,7 @@ a couple things worth noting:
 
 - `SHA_DIGEST_LENGTH` is 20 — SHA-1 produces 160 bits, which is 20 bytes. we convert each byte to 2 hex characters, giving us the 40-character string you're used to seeing in git.
 - `reinterpret_cast` is needed because SHA-1 operates on raw `unsigned char` bytes. it knows nothing about "text" or "meaning" — it's just crunching bytes.
-- we're starting with a simplified format (plain text objects). real git prepends a header and uses binary format — we'll get there.
+- we're starting with a simplified format (plain text objects). real git prepends a header and uses binary format.
 
 ## testing it
 
@@ -89,9 +89,9 @@ echo "hello world" | sha1sum    # WRONG — includes a trailing newline
 echo -n "hello world" | sha1sum # correct — no newline
 ```
 
-without `-n`, `echo` appends `\n` to the output. that's one extra byte. and a single extra byte produces a **completely different hash**. this isn't a bug — this is the feature. SHA-1 treats input as raw bytes, and `"hello world"` and `"hello world\n"` are different byte sequences, period.
+without `-n`, `echo` appends `\n` to the output. that's one extra byte. and a single extra byte produces a **completely different hash**. this isn't a bug — this is the feature. SHA-1 treats input as raw bytes, and `"hello world"` and `"hello world\n"` are different byte sequences.
 
-this is exactly what makes git tamper-proof. you can't change a single byte anywhere in the history without every hash downstream changing. the math doesn't care about your intentions — it only cares about the bytes.
+this is exactly what makes git tamper-proof. you can't change a single byte anywhere in the history without every hash downstream changing.
 
 ## what's next
 
