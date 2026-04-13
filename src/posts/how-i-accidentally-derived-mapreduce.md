@@ -101,9 +101,9 @@ because the mapper is **stateless**. it sees one line, emits one pair, moves on.
 
 the counting happens later, in the reducer, where it *is* someone's job to maintain state. but only for one key at a time, and only as a stream.
 
-## wait. i just reinvented mapreduce.
+## Summary
 
-let me step back and look at what i actually built:
+
 
 **phase 1:** scan the input line by line. for each line, extract the key (username) and emit a key-value pair. each line is processed independently. no state carried between lines.
 
