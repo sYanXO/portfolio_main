@@ -26,7 +26,7 @@ const BlogPost = () => {
   const post = getPost(slug);
 
   useDocumentTitle(
-    post ? `${post.meta.title || slug} — Sreayan De` : 'Not found — Sreayan De'
+    post ? `${post.meta.title || slug} | Sreayan De` : 'Not found | Sreayan De'
   );
 
   if (!post) {

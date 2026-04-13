@@ -38,7 +38,7 @@ const projects = [
   },
   {
     name: 'Vercel Clone',
-    desc: 'tried to build my own vercel — queued builds, object storage, the whole deployment pipeline. learned a lot, shipped nothing. classic.',
+    desc: 'tried to build my own vercel. queued builds, object storage, the whole deployment pipeline. learned a lot, shipped nothing. classic.',
     github: null,
     live: null,
     status: 'archived',
@@ -46,7 +46,7 @@ const projects = [
 ];
 
 const Projects = () => {
-  useDocumentTitle('Projects — Sreayan De');
+  useDocumentTitle('Projects | Sreayan De');
 
   return (
     <div className="page">

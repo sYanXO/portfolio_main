@@ -38,7 +38,7 @@ function getAllPosts() {
 }
 
 const Blog = () => {
-  useDocumentTitle('Blog — Sreayan De');
+  useDocumentTitle('Blog | Sreayan De');
 
   const posts = getAllPosts();
 
