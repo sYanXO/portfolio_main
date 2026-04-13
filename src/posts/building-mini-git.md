@@ -51,6 +51,8 @@ a couple things worth noting:
 - `reinterpret_cast` is needed because SHA-1 operates on raw `unsigned char` bytes. it knows nothing about "text" or "meaning" — it's just crunching bytes.
 - we're starting with a simplified format (plain text objects). real git prepends a header and uses binary format.
 
+if you're curious what the real thing looks like — [git's openssl.h](https://github.com/git/git/blob/master/sha1/openssl.h) does basically the same thing, but uses OpenSSL's EVP streaming API (`EVP_MD_CTX`) instead of calling `SHA1()` in one shot. the difference is that EVP lets you feed data in chunks — Init, Update, Final — so git can hash huge files without loading everything into memory first. our version dumps it all into a `std::string` and hashes in one go, which is totally fine for learning but not how you'd do it in production.
+
 ## testing it
 
 quick sanity check:
