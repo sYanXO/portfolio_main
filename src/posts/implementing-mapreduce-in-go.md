@@ -8,6 +8,8 @@ in the last post, we derived the mapreduce programming model by reasoning throug
 
 the implementation language is go. this is a deliberate choice. goroutines and channels map naturally onto the mapreduce programming model even though we are running on a single machine.
 
+you can find the complete source code for this project on github: [https://github.com/sYanXO/mapReduce](https://github.com/sYanXO/mapReduce).
+
 ## the input
 
 we are processing a pipe-delimited file of discord messages in the format `username | timestamp | message`. our goal is to find the top 10 most active users by message count.
