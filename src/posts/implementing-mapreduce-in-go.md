@@ -1,54 +1,115 @@
 ---
 title: "implementing mapreduce in go"
 date: "2026-04-14"
-description: "building a mapreduce engine from scratch to count discord messages."
+description: "building a concurrent mapreduce engine from scratch to count discord messages."
 ---
 
-in the last post, we derived the mapreduce programming model by reasoning through a memory constraint problem. now we build it. 
+in the [last post](/blog/how-i-accidentally-derived-mapreduce), we derived mapreduce by reasoning through a memory constraint problem. three phases fell out of the constraints: stateless map, group-by-key shuffle, streaming reduce. now we build it.
 
-the implementation language is go. this is a deliberate choice. goroutines and channels map naturally onto the mapreduce programming model even though we are running on a single machine.
+the implementation language is go. goroutines and channels map naturally onto the mapreduce model, even on a single machine. the implementation started sequential, then concurrency was added to the map phase. this post reflects the current state.
 
-you can find the complete source code for this project on github: [https://github.com/sYanXO/mapReduce](https://github.com/sYanXO/mapReduce).
+source code: [github.com/sYanXO/mapReduce](https://github.com/sYanXO/mapReduce).
 
 ## the input
 
-we are processing a pipe-delimited file of discord messages in the format `username | timestamp | message`. our goal is to find the top 10 most active users by message count.
+pipe-delimited discord messages. one per line. format: `username | timestamp | message`. the goal: find the top 10 most active users by message count.
 
-i wrote a python generator script to produce a test file with 1 million lines across 10 hardcoded usernames. real-world data would obviously have thousands of unique users. the generator is a simulation, not a realistic dataset, but the pipeline handles both identically.
+i wrote a python generator script to produce a test file with 1 million lines across 10 hardcoded usernames. real-world data would have thousands of unique users. the generator is a simulation, not a realistic dataset. the pipeline handles both identically.
 
-## the implementation
+## setup
 
-here is how the implementation works phase by phase.
+two things happen before any real work starts.
 
-### map phase
+first, wipe and recreate the `intermediate/` directory. this ensures no stale data from previous runs bleeds into the current one.
 
-we stream the input file line by line using `bufio.Scanner`. for each line, we split on `|`, trim the whitespace, extract the username, and append `username,1` to `intermediate/username.txt`. 
+```go
+os.RemoveAll("intermediate")
+os.MkdirAll("intermediate", 0755)
+```
 
-the directory is wiped clean at the start of every run to avoid stale data from previous runs. 
+second, read all lines into memory as a `[]string` slice.
 
-the key point here is that the mapper is stateless. it sees one line, writes one entry, and moves on. it has no memory of previous lines. 
+```go
+var lines []string
+scanner := bufio.NewScanner(file)
+for scanner.Scan() {
+    lines = append(lines, scanner.Text())
+}
+```
 
-(opening and closing a file handle for every single line is inefficient. this is a known limitation and an obvious future optimization.)
+this is a tradeoff worth being explicit about. loading the full input into RAM contradicts the streaming philosophy of the original design. the reason is pragmatic: distributing work across goroutines requires slicing the data into chunks, and slicing requires knowing the full dataset upfront. for truly massive files (larger than available RAM), this would be a problem. for 1 million lines on a modern machine, it's an acceptable simplification.
 
-### shuffle phase
+## map phase (concurrent)
 
-there is no explicit shuffle code. 
+the mapper is stateless. it sees one line, extracts the username, emits `username,1` to an intermediate file, and moves on. no memory of previous lines. because each line is independent, this is embarrassingly parallel.
 
-the intermediate directory itself is the shuffle. by routing each emission to a file named after the username, all of a user's data naturally lands in the same place. the filesystem does the grouping. this is the elegance of the approach.
+we divide the `lines` slice into `numWorkers` equal chunks. `numWorkers` is hardcoded to 4. chunk size is calculated as:
 
-### reduce phase
+```go
+chunkSize := (len(lines) + numWorkers - 1) / numWorkers
+```
 
-we read all files in the intermediate directory using `os.ReadDir`. for each file, we stream through it line by line with a counter. 
+this is ceiling division. it matters because if you have 1,000,003 lines and 4 workers, regular integer division gives you 250,000 per chunk, leaving 3 lines unprocessed. ceiling division gives you 250,001, and the last chunk gets the remaining lines.
 
-memory usage is exactly one integer per user, regardless of how many messages they sent. we extract the username from the filename and store the result in a slice of structs.
+one goroutine per chunk. each goroutine independently processes its slice of the input:
 
-### sort and output
+```go
+wg.Add(1)
+go func(chunk []string) {
+    defer wg.Done()
+    for _, line := range chunk {
+        parts := strings.Split(line, "|")
+        username := strings.TrimSpace(parts[0])
 
-we sort the results slice by count descending using `sort.Slice` and print the top 10.
+        mu.Lock()
+        outFile, _ := os.OpenFile(
+            "intermediate/"+username+".txt",
+            os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644,
+        )
+        outFile.WriteString(username + ",1\n")
+        outFile.Close()
+        mu.Unlock()
+    }
+}(lines[start:end])
+```
 
-## the output
+`sync.WaitGroup` coordinates the goroutines. the main goroutine calls `wg.Wait()` and blocks until every worker has called `wg.Done()`.
 
-this is the actual output from running against 1 million lines:
+### the mutex problem
+
+concurrent file writes are a race condition. if alice appears in chunk 1 and chunk 3, two goroutines try to append to `alice.txt` at the same time. without synchronization, the output gets corrupted.
+
+the fix is a `sync.Mutex` wrapping every file open, write, and close.
+
+here's what that actually means: the mutex serializes the file writes. goroutines process their chunks in parallel (splitting lines, extracting usernames), but they block on each other when writing to disk. the parallelism is real but partial. the CPU-bound work (string splitting, trimming) runs concurrently. the I/O-bound work (file writes) runs sequentially through the lock.
+
+a cleaner approach would be per-worker intermediate files merged later, or per-username channels feeding dedicated writer goroutines. those eliminate the global lock entirely. but for this implementation, the mutex is correct even if not maximally efficient. getting correctness first and optimizing later is the right order.
+
+## shuffle phase
+
+no explicit code. the `intermediate/` directory *is* the shuffle.
+
+by routing each emission to a file named after the username, all of a user's data naturally lands in the same place. `alice.txt` contains every `alice,1` pair, regardless of which goroutine produced them. the filesystem does the grouping.
+
+## reduce phase
+
+sequential. read all files in `intermediate/` with `os.ReadDir`. for each file, stream through it line by line with a counter.
+
+```go
+count := 0
+s := bufio.NewScanner(f)
+for s.Scan() {
+    count++
+}
+```
+
+memory usage: one integer per user, regardless of how many messages they sent. alice could have 10 million messages and the reducer still holds a single `int`. extract the username from the filename (strip `.txt`), store the result in a `[]Result` slice.
+
+## sort and output
+
+sort the results slice by count descending using `sort.Slice`. print the top 10.
+
+this is the actual output from running against 1 million generated lines:
 
 ```text
 frank : 100622
@@ -60,55 +121,26 @@ diana : 99931
 eve : 99931
 grace : 99892
 henry : 99827
-irene : 99576
+iris : 99576
 ```
 
-the counts are roughly equal (about 100k each) because the generator picks names randomly with a uniform distribution. this is expected.
-
-## making it concurrent
-
-the sequential version works, but it leaves performance on the table. the map phase is embarrassingly parallel. each line is processed independently, no state shared between lines. this is exactly the kind of work goroutines were made for.
-
-the idea is simple: read all lines into memory, split them into chunks, and hand each chunk to a separate goroutine. 4 workers means 4 goroutines each processing roughly 250K lines in parallel.
-
-```go
-chunkSize := (len(lines) + numWorkers - 1) / numWorkers
-
-for i := 0; i < numWorkers; i++ {
-    start := i * chunkSize
-    end := start + chunkSize
-    // ...
-    go func(chunk []string) {
-        defer wg.Done()
-        // map each line in the chunk
-    }(lines[start:end])
-}
-wg.Wait()
-```
-
-`sync.WaitGroup` is the coordination primitive. the main goroutine calls `wg.Wait()` and blocks until all workers report done. each worker calls `wg.Done()` when it finishes its chunk.
-
-the one wrinkle is file writes. multiple goroutines might try to write to the same intermediate file simultaneously (if alice appears in chunk 1 and chunk 3, both workers try to append to `alice.txt` at the same time). so we protect file writes with a `sync.Mutex`. one lock, simple, correct.
-
-is the mutex a bottleneck? honestly, for this workload, not really. the critical section is tiny: open, write one line, close. a smarter implementation would use per-file locks or buffered channels, but global mutex gets the job done without overcomplicating things.
-
-the reduce phase stays sequential. it was already fast. reading a directory and counting lines in small files is I/O-bound, and parallelizing it would add complexity for negligible gain.
+the counts are roughly equal at ~100k each. the generator picks usernames with a uniform random distribution, so this is expected.
 
 ## known limitations
 
-opening and closing a file handle for every single line in the map phase is inefficient. a real implementation would maintain a pool of open file handles.
+- loading all lines into memory upfront. not suitable for files larger than available RAM.
+- mutex on file writes partially serializes the map phase. the concurrency is real but constrained.
+- `numWorkers = 4` is hardcoded. a real implementation would use `runtime.NumCPU()`.
+- reduce phase is still sequential. parallelizing it is a natural next step.
+- opening and closing a file handle for every single line. a real implementation would maintain a pool of open file handles.
 
-the generator only simulates 10 users. real data would have thousands.
+## closing
 
-no fault tolerance. if the program crashes mid-run, intermediate state is lost.
+the map phase is concurrent. each worker independently processes its chunk. the core insight holds: because the mapper is stateless and each line is independent, parallelism is trivially achievable. the mutex is an implementation detail forced by shared filesystem access, not a fundamental limitation of the model.
 
-## shutting it down
+a real distributed mapreduce sidesteps the mutex entirely. each mapper writes to its own local disk. the shuffle moves data over the network afterward. no shared filesystem, no lock contention. the distribution is just an optimization on top of the same idea.
 
-the 2004 google implementation ran across thousands of machines with fault tolerance, load balancing, and network partitioning handled automatically by the framework.
-
-this implementation runs on one laptop with a mutex and four goroutines. but the core logic is identical: stateless map, group by key, streaming reduce. the concurrency we just added is the single-machine version of exactly what google did across a datacenter. split the input, fan out to workers, merge the results.
-
-the gap between this and production mapreduce is fault tolerance, not architecture.
+next step: parallelize the reduce phase.
 
 ```go
 package main
@@ -140,7 +172,7 @@ func main() {
 	os.RemoveAll("intermediate")
 	os.MkdirAll("intermediate", 0755)
 
-	// Read all lines into memory
+	// read all lines into memory
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -150,10 +182,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Split lines into chunks for each worker
+	// split lines into chunks for each worker
 	chunkSize := (len(lines) + numWorkers - 1) / numWorkers
 	var wg sync.WaitGroup
-	var mu sync.Mutex // protects concurrent file writes
+	var mu sync.Mutex
 
 	for i := 0; i < numWorkers; i++ {
 		start := i * chunkSize
@@ -187,7 +219,7 @@ func main() {
 
 	wg.Wait()
 
-	// reading from /intermediate
+	// reduce
 	results := []Result{}
 	entries, err := os.ReadDir("intermediate")
 	if err != nil {
