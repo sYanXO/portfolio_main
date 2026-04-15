@@ -67,7 +67,7 @@ the counts are roughly equal (about 100k each) because the generator picks names
 
 ## making it concurrent
 
-the sequential version works, but it leaves performance on the table. the map phase is embarrassingly parallel — each line is processed independently, no state shared between lines. this is exactly the kind of work goroutines were made for.
+the sequential version works, but it leaves performance on the table. the map phase is embarrassingly parallel. each line is processed independently, no state shared between lines. this is exactly the kind of work goroutines were made for.
 
 the idea is simple: read all lines into memory, split them into chunks, and hand each chunk to a separate goroutine. 4 workers means 4 goroutines each processing roughly 250K lines in parallel.
 
@@ -86,13 +86,13 @@ for i := 0; i < numWorkers; i++ {
 wg.Wait()
 ```
 
-`sync.WaitGroup` is the coordination primitive — the main goroutine calls `wg.Wait()` and blocks until all workers report done. each worker calls `wg.Done()` when it finishes its chunk.
+`sync.WaitGroup` is the coordination primitive. the main goroutine calls `wg.Wait()` and blocks until all workers report done. each worker calls `wg.Done()` when it finishes its chunk.
 
 the one wrinkle is file writes. multiple goroutines might try to write to the same intermediate file simultaneously (if alice appears in chunk 1 and chunk 3, both workers try to append to `alice.txt` at the same time). so we protect file writes with a `sync.Mutex`. one lock, simple, correct.
 
-is the mutex a bottleneck? honestly, for this workload, not really. the critical section is tiny — open, write one line, close. a smarter implementation would use per-file locks or buffered channels, but global mutex gets the job done without overcomplicating things.
+is the mutex a bottleneck? honestly, for this workload, not really. the critical section is tiny: open, write one line, close. a smarter implementation would use per-file locks or buffered channels, but global mutex gets the job done without overcomplicating things.
 
-the reduce phase stays sequential. it was already fast — reading a directory and counting lines in small files is I/O-bound, and parallelizing it would add complexity for negligible gain.
+the reduce phase stays sequential. it was already fast. reading a directory and counting lines in small files is I/O-bound, and parallelizing it would add complexity for negligible gain.
 
 ## known limitations
 
@@ -106,7 +106,7 @@ no fault tolerance. if the program crashes mid-run, intermediate state is lost.
 
 the 2004 google implementation ran across thousands of machines with fault tolerance, load balancing, and network partitioning handled automatically by the framework.
 
-this implementation runs on one laptop with a mutex and four goroutines. but the core logic is identical — stateless map, group by key, streaming reduce. the concurrency we just added is the single-machine version of exactly what google did across a datacenter: split the input, fan out to workers, merge the results.
+this implementation runs on one laptop with a mutex and four goroutines. but the core logic is identical: stateless map, group by key, streaming reduce. the concurrency we just added is the single-machine version of exactly what google did across a datacenter. split the input, fan out to workers, merge the results.
 
 the gap between this and production mapreduce is fault tolerance, not architecture.
 
