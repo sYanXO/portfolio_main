@@ -65,23 +65,50 @@ irene : 99576
 
 the counts are roughly equal (about 100k each) because the generator picks names randomly with a uniform distribution. this is expected.
 
+## making it concurrent
+
+the sequential version works, but it leaves performance on the table. the map phase is embarrassingly parallel — each line is processed independently, no state shared between lines. this is exactly the kind of work goroutines were made for.
+
+the idea is simple: read all lines into memory, split them into chunks, and hand each chunk to a separate goroutine. 4 workers means 4 goroutines each processing roughly 250K lines in parallel.
+
+```go
+chunkSize := (len(lines) + numWorkers - 1) / numWorkers
+
+for i := 0; i < numWorkers; i++ {
+    start := i * chunkSize
+    end := start + chunkSize
+    // ...
+    go func(chunk []string) {
+        defer wg.Done()
+        // map each line in the chunk
+    }(lines[start:end])
+}
+wg.Wait()
+```
+
+`sync.WaitGroup` is the coordination primitive — the main goroutine calls `wg.Wait()` and blocks until all workers report done. each worker calls `wg.Done()` when it finishes its chunk.
+
+the one wrinkle is file writes. multiple goroutines might try to write to the same intermediate file simultaneously (if alice appears in chunk 1 and chunk 3, both workers try to append to `alice.txt` at the same time). so we protect file writes with a `sync.Mutex`. one lock, simple, correct.
+
+is the mutex a bottleneck? honestly, for this workload, not really. the critical section is tiny — open, write one line, close. a smarter implementation would use per-file locks or buffered channels, but global mutex gets the job done without overcomplicating things.
+
+the reduce phase stays sequential. it was already fast — reading a directory and counting lines in small files is I/O-bound, and parallelizing it would add complexity for negligible gain.
+
 ## known limitations
 
 opening and closing a file handle for every single line in the map phase is inefficient. a real implementation would maintain a pool of open file handles.
 
 the generator only simulates 10 users. real data would have thousands.
 
-everything runs sequentially on one machine. the natural next step is goroutines (running multiple mappers concurrently on different chunks of the input file). go's concurrency model makes this straightforward.
-
 no fault tolerance. if the program crashes mid-run, intermediate state is lost.
 
 ## shutting it down
 
-the 2004 google implementation ran across thousands of machines with fault tolerance, load balancing, and network partitioning handled automatically by the framework. 
+the 2004 google implementation ran across thousands of machines with fault tolerance, load balancing, and network partitioning handled automatically by the framework.
 
-this implementation runs on one laptop with no fault tolerance and sequential execution. but the core logic is identical. it is a stateless map, group by key, and streaming reduce. the distribution is just an optimization on top of the idea. 
+this implementation runs on one laptop with a mutex and four goroutines. but the core logic is identical — stateless map, group by key, streaming reduce. the concurrency we just added is the single-machine version of exactly what google did across a datacenter: split the input, fan out to workers, merge the results.
 
-next step: add goroutines and make the map phase concurrent.
+the gap between this and production mapreduce is fault tolerance, not architecture.
 
 ```go
 package main
@@ -93,7 +120,10 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 )
+
+const numWorkers = 4
 
 type Result struct {
 	Username string
@@ -110,37 +140,65 @@ func main() {
 	os.RemoveAll("intermediate")
 	os.MkdirAll("intermediate", 0755)
 
+	// Read all lines into memory
+	var lines []string
 	scanner := bufio.NewScanner(file)
-
 	for scanner.Scan() {
-		parts := strings.Split(scanner.Text(), "|")
-		username := strings.TrimSpace(parts[0])
-
-		outFile, err := os.OpenFile("intermediate/"+username+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		outFile.WriteString(username + ",1\n")
-		outFile.Close()
+		lines = append(lines, scanner.Text())
 	}
-
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 
+	// Split lines into chunks for each worker
+	chunkSize := (len(lines) + numWorkers - 1) / numWorkers
+	var wg sync.WaitGroup
+	var mu sync.Mutex // protects concurrent file writes
+
+	for i := 0; i < numWorkers; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if end > len(lines) {
+			end = len(lines)
+		}
+		if start >= len(lines) {
+			break
+		}
+
+		wg.Add(1)
+		go func(chunk []string) {
+			defer wg.Done()
+			for _, line := range chunk {
+				parts := strings.Split(line, "|")
+				username := strings.TrimSpace(parts[0])
+
+				mu.Lock()
+				outFile, err := os.OpenFile("intermediate/"+username+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					mu.Unlock()
+					log.Fatal(err)
+				}
+				outFile.WriteString(username + ",1\n")
+				outFile.Close()
+				mu.Unlock()
+			}
+		}(lines[start:end])
+	}
+
+	wg.Wait()
+
+	// reading from /intermediate
 	results := []Result{}
 	entries, err := os.ReadDir("intermediate")
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	for _, entry := range entries {
 		filepath := "intermediate/" + entry.Name()
 		f, err := os.Open(filepath)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		count := 0
 		s := bufio.NewScanner(f)
 		for s.Scan() {
