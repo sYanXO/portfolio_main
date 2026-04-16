@@ -9,7 +9,7 @@ const About = () => {
 
       <p className="home-bio">
         hey, i'm sreayan. i write code that doesn't fall apart when things get weird.
-        mostly Go and Python, mostly backend stuff, mostly at 2am. when i'm not debugging
+        mostly Go, C++ and Python, mostly backend stuff, mostly at 2am. when i'm not debugging
         race conditions, i'm probably deep in some rabbit hole about how LLM inference
         actually works or why distributed systems lie to you.
       </p>
@@ -30,7 +30,7 @@ const About = () => {
 
       <h2>currently obsessed with</h2>
       <ul>
-        <li>building a mini-git from scratch in Go (yes, the plumbing commands too)</li>
+        <li>building a mini-git from scratch in C++ (yes, the plumbing commands too)</li>
         <li>how consensus protocols handle it when the network just... doesn't</li>
         <li>high-throughput data pipelines that don't melt under load</li>
         <li>WebSocket-based real-time stuff, because polling is <strong>BORING</strong></li>
