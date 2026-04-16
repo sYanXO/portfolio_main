@@ -12,7 +12,7 @@ basically whatever i'm learning or building at the time:
 
 - **systems programming.** Go internals, concurrency patterns, random stuff i run into while building backend things that won't stop breaking.
 - **distributed systems.** notes from papers i read, things that genuinely surprised me, failure modes that sound fake until they happen to you at 3am.
-- **quantitative thinking.** backtesting strategies, probability puzzles, anything where math meets real life in ways you didn't expect.
+- **LLM inference & infra.** how models get served at scale, GPU optimization, and the surprisingly deep engineering problems hiding behind a simple API call.
 
 ## why not just tweet about it?
 

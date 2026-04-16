@@ -10,8 +10,8 @@ const About = () => {
       <p className="home-bio">
         hey, i'm sreayan. i write code that doesn't fall apart when things get weird.
         mostly Go and Python, mostly backend stuff, mostly at 2am. when i'm not debugging
-        race conditions, i'm probably deep in some rabbit hole about how markets work or
-        why distributed systems lie to you.
+        race conditions, i'm probably deep in some rabbit hole about how LLM inference
+        actually works or why distributed systems lie to you.
       </p>
 
       <hr />
@@ -22,8 +22,8 @@ const About = () => {
         data and cry. that's what got me hooked on backend engineering and distributed systems.
       </p>
       <p>
-        outside of code, i'm into quant finance, game theory, and figuring out why
-        humans are so bad at making decisions (spoiler: we just are).
+        outside of code, i'm into LLM inference, GPU infrastructure, and figuring out
+        why serving models at scale is way harder than training them.
       </p>
 
       <hr />
@@ -34,8 +34,8 @@ const About = () => {
         <li>how consensus protocols handle it when the network just... doesn't</li>
         <li>high-throughput data pipelines that don't melt under load</li>
         <li>WebSocket-based real-time stuff, because polling is <strong>BORING</strong></li>
-        <li>market-neutral trading strategies and backtesting them until they break</li>
-        <li>prediction markets. why they exist, why they're wrong, and what that says about us</li>
+        <li>LLM inference optimization — KV caches, speculative decoding, and why latency is everything</li>
+        <li>the infra behind serving models: vLLM, TensorRT-LLM, and making GPUs actually earn their rent</li>
       </ul>
 
       <hr />
@@ -57,8 +57,9 @@ const About = () => {
           <br /><span className="book-note">made me realize half my "rational decisions" were just vibes. genuinely useful for life, not just work.</span>
         </li>
         <li>
-          <span className="book-title">The Art of Strategy</span> by Avinash K. Dixit &amp; Barry J. Nalebuff
-          <br /><span className="book-note">game theory but actually understandable. applies to way more than just economics.</span>
+          <span className="book-title">Programming Massively Parallel Processors</span> by Hwu, Kirk &amp; Wen-mei
+          <span className="book-rec">★ goated</span>
+          <br /><span className="book-note">the GPU programming bible. if you care about inference infra, start here.</span>
         </li>
       </ul>
 
@@ -67,7 +68,7 @@ const About = () => {
       <h2>things that keep me up at night</h2>
       <ul>
         <li>why do distributed systems papers just assume clocks work? they don't. they literally drift.</li>
-        <li>prediction markets should be smart but they're weirdly noisy. what's up with that?</li>
+        <li>why is LLM inference still so expensive? we're leaving insane amounts of GPU utilization on the table.</li>
         <li>do programming languages shape how we think about problems, or are we overthinking it?</li>
         <li>is there a clean way to handle errors that isn't monads or exceptions? asking for a friend.</li>
       </ul>

@@ -2,6 +2,13 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
+    name: 'LLM Inference Bench',
+    desc: 'benchmarking harness for comparing LLM serving frameworks (vLLM, TGI, TensorRT-LLM). measures TTFT, throughput, and GPU util across different batch sizes and quantizations.',
+    github: '#',
+    live: null,
+    status: 'wip',
+  },
+  {
     name: 'mini-git',
     desc: 'building git from scratch in Go because i wanted to understand what actually happens when you commit. plumbing commands, object model, the whole thing.',
     github: '#',
@@ -17,7 +24,7 @@ const projects = [
   },
   {
     name: 'Stake IPL',
-    desc: 'full-stack IPL prediction app with fake coins, admin-managed markets, and live leaderboards. like polymarket but for cricket nerds.',
+    desc: 'full-stack IPL prediction app with fake coins, admin-managed markets, and live leaderboards. built it for cricket nerds who like putting hypothetical money where their mouth is.',
     github: 'https://github.com/sYanXO/Steak',
     live: 'https://steak-hjli.vercel.app/',
     status: null,
@@ -27,13 +34,6 @@ const projects = [
     desc: 'client-side image compressor that hits exact file size targets. no uploads, no backend, just vibes and math.',
     github: 'https://github.com/sYanXO/Opti-Shrink',
     live: 'https://opti-shrink.vercel.app/',
-    status: null,
-  },
-  {
-    name: 'Market-Neutral Quant Strategy',
-    desc: 'mean reversion strategy with regime filters and ATR-based risk controls. backtested across 60+ tickers to see if it actually works (spoiler: sometimes).',
-    github: 'https://github.com/sYanXO/NSE-meanReversion-strategy',
-    live: null,
     status: null,
   },
   {
