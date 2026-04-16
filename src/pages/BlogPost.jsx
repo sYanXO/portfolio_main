@@ -1,7 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { parseFrontmatter, postModules } from './Blog';
 
@@ -52,7 +55,7 @@ const BlogPost = () => {
       </div>
 
       <div className="post-body">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeHighlight, rehypeKatex]}>
           {content}
         </ReactMarkdown>
       </div>
