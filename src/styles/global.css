@@ -339,6 +339,69 @@ blockquote {
   margin: 1.5rem 0;
 }
 
+.post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.92rem;
+  overflow-x: auto;
+  display: block;
+}
+
+.post-body thead {
+  display: table-header-group;
+}
+
+.post-body tbody {
+  display: table-row-group;
+}
+
+.post-body tr {
+  display: table-row;
+}
+
+.post-body table,
+.post-body thead,
+.post-body tbody,
+.post-body tr {
+  width: 100%;
+}
+
+@supports (display: table) {
+  .post-body table {
+    display: table;
+  }
+}
+
+.post-body th,
+.post-body td {
+  border: 1px solid var(--border);
+  padding: 0.6rem 1rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.post-body th {
+  background-color: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.post-body tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.post-body tbody tr:hover {
+  background-color: rgba(74, 111, 165, 0.06);
+}
+
+.post-body td:last-child {
+  white-space: normal;
+}
+
 /* ===== Projects Page ===== */
 .project-list {
   list-style: none;

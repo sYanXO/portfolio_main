@@ -7,18 +7,46 @@
     <language>en-us</language>
     <atom:link href="https://sreayan.dev/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
-      <title>Hello, world</title>
+      <title>Understanding LLM Inference Engineering: Why Your Laptop Can't Keep Up</title>
+      <link>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</link>
+      <guid>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</guid>
+      <pubDate>Sat, 18 Apr 2026 00:00:00 GMT</pubDate>
+      <description>i benchmarked a small llm on my cpu and finally saw where inference time actually goes.</description>
+    </item>
+    <item>
+      <title>how llms actually run at scale</title>
+      <link>https://sreayan.dev/blog/how-llms-actually-run-at-scale</link>
+      <guid>https://sreayan.dev/blog/how-llms-actually-run-at-scale</guid>
+      <pubDate>Thu, 16 Apr 2026 00:00:00 GMT</pubDate>
+      <description>a systems deep dive into what it takes to serve a 405B parameter model to thousands of users.</description>
+    </item>
+    <item>
+      <title>implementing mapreduce in go</title>
+      <link>https://sreayan.dev/blog/implementing-mapreduce-in-go</link>
+      <guid>https://sreayan.dev/blog/implementing-mapreduce-in-go</guid>
+      <pubDate>Tue, 14 Apr 2026 00:00:00 GMT</pubDate>
+      <description>building a concurrent mapreduce engine from scratch to count discord messages.</description>
+    </item>
+    <item>
+      <title>building mini-git</title>
+      <link>https://sreayan.dev/blog/building-mini-git</link>
+      <guid>https://sreayan.dev/blog/building-mini-git</guid>
+      <pubDate>Mon, 13 Apr 2026 00:00:00 GMT</pubDate>
+      <description>i'm building git from scratch in C++.</description>
+    </item>
+    <item>
+      <title>how i accidentally derived mapreduce</title>
+      <link>https://sreayan.dev/blog/how-i-accidentally-derived-mapreduce</link>
+      <guid>https://sreayan.dev/blog/how-i-accidentally-derived-mapreduce</guid>
+      <pubDate>Mon, 13 Apr 2026 00:00:00 GMT</pubDate>
+      <description>i tried to count discord messages and ended up reinventing a 2004 google paper.</description>
+    </item>
+    <item>
+      <title>hello, world</title>
       <link>https://sreayan.dev/blog/hello-world</link>
       <guid>https://sreayan.dev/blog/hello-world</guid>
       <pubDate>Sun, 12 Apr 2026 00:00:00 GMT</pubDate>
-      <description>First post — why I'm starting a blog, and what I hope to write about.</description>
-    </item>
-    <item>
-      <title>Building mini-git</title>
-      <link>https://sreayan.dev/blog/building-mini-git</link>
-      <guid>https://sreayan.dev/blog/building-mini-git</guid>
-      <pubDate>Fri, 10 Apr 2026 00:00:00 GMT</pubDate>
-      <description>Notes on implementing Git from scratch — the object model, hashing, and why plumbing commands matter.</description>
+      <description>first post. why i'm writing, what to expect, and why twitter wasn't enough.</description>
     </item>
   </channel>
 </rss>
