@@ -6,9 +6,9 @@ description: "i benchmarked a small llm on my cpu and finally saw where inferenc
 
 ask a language model a question on your laptop and watch it suffer.
 
-> **prerequisites:** this post assumes basic familiarity with the transformer architecture, attention mechanisms, key-value (kv) caching, tokenization, matrix multiplications in neural networks, and what quantization means at a high level. you don't need to be an expert, but knowing what these terms refer to will help you follow along and reproduce the benchmarks yourself.
-
 the setup was deliberately unimpressive: 16GB RAM, 8 cpu cores, ubuntu 24.04, no gpu. that turned out to be perfect, because the bottleneck was impossible to ignore. no gpu meant the bottleneck couldn't hide behind cuda optimizations.
+
+> **prerequisites:** this post assumes basic familiarity with the transformer architecture, attention mechanisms, key-value (kv) caching, tokenization, matrix multiplications in neural networks, and what quantization means at a high level. you don't need to be an expert, but knowing what these terms refer to will help you follow along and reproduce the benchmarks yourself.
 
 i spent a day benchmarking `phi-3.1-mini` on that cpu-only machine because i wanted to know what exactly was slow. the answer was immediate: generation was about 3x slower than prompt processing for the same model run.
 
@@ -27,7 +27,7 @@ cmake --build build -j
 
 this compiled `llama.cpp` with `openblas`, a linear algebra library that uses all 8 cpu cores.
 
-then i downloaded three `phi-3.1-mini` quantizations in `gguf` format. i downloaded three different compression levels of the same model to understand quantization tradeoffs:
+then i downloaded three different compression levels of the same model to understand quantization tradeoffs:
 
 ```bash
 hf download bartowski/Phi-3.1-mini-4k-instruct-GGUF \
@@ -54,9 +54,9 @@ for most of the tests i used this benchmark command:
   --batch-size 2048
 ```
 
-that gave me two numbers:
+that gave me two numbers per run:
 
-```text
+```
 | phi3 3B Q4_K - Medium | pp512 | 15.60 +- 1.42 |
 | phi3 3B Q4_K - Medium | tg128 |  6.28 +- 0.07 |
 ```
@@ -75,9 +75,7 @@ generation is the opposite. once the prompt is done, the model has to produce th
 
 here's the difference visualized:
 
-the flow looks like this:
-
-```text
+```
 prompt tokens
     |
     v
@@ -113,13 +111,13 @@ every generated token needs to read the cache for all previous tokens. so the wo
 
 here's what the generation loop does:
 
-```text
+```
 step 1: read cache for 512 tokens  -> generate 1 token
 step 2: read cache for 513 tokens  -> generate 1 token
 step 3: read cache for 514 tokens  -> generate 1 token
 ```
 
-by step 1000, you're moving 1000x more data per token than at step 1. this is why long context hurts.
+by step 1000, you're moving nearly 3x more data per token than at step 1 (512 tokens vs 1512 tokens of cache). this is why long context hurts.
 
 on my machine, a 4096-token context used roughly 2.9GB more RAM than baseline. watching 2.9GB materialize in real-time made it impossible to ignore: this wasn't theoretical anymore.
 
@@ -127,18 +125,8 @@ on my machine, a 4096-token context used roughly 2.9GB more RAM than baseline. w
 
 let me benchmark the same model with different context lengths:
 
-```text
-512 context
-pp512  = 15.11 tok/s
-tg128  =  5.18 tok/s
-
-4096 context
-pp4096 = 11.90 tok/s
-tg128  =  3.37 tok/s
 ```
-
-```text
-Metric      512 ctx    4096 ctx   Change
+metric      512 ctx    4096 ctx   change
 pp speed    15.11      11.90      -21%
 tg speed     5.18       3.37      -35%
 ```
@@ -147,7 +135,7 @@ prompt processing degrades gracefully. generation crashes. that's because one is
 
 the crude mental model is:
 
-```text
+```
 time per generated token =
   kv cache bytes / memory bandwidth
   + matmul compute time
@@ -159,17 +147,17 @@ on cpu, memory bandwidth is the ceiling. everything waits for data.
 
 let me test whether compression actually helps:
 
-| Format | File Size | pp512 | tg128 | Why It Matters |
-|---|---:|---:|---:|---|
-| Q2_K | 1.32 GiB | 9.88 | 7.11 | Smallest, but decompression tax |
-| Q4_K_M | 2.23 GiB | 15.60 | 6.28 | Fastest overall, sweet spot |
-| Q8_0 | 3.78 GiB | 14.96 | 3.85 | Largest, hits memory bandwidth wall |
+| format | file size | pp512 | tg128 | why it matters |
+|--------|----------:|------:|------:|----------------|
+| Q2_K   | 1.32 GiB  | 9.88  | 7.11  | smallest, but decompression tax |
+| Q4_K_M | 2.23 GiB  | 15.60 | 6.28  | fastest overall, sweet spot |
+| Q8_0   | 3.78 GiB  | 14.96 | 3.85  | largest, hits memory bandwidth wall |
 
 notice: smallest file does not mean fastest. this is the key insight about quantization.
 
 `Q2_K` had the fastest generation, but the slowest prompt processing. the likely reason is decompression overhead. 2-bit weights save memory traffic, but unpacking them costs cpu work.
 
-`Q8_0` had the fastest prompt processing (14.96, almost tied with Q4) but the slowest generation speed (3.85). that's because the model file is huge — you get good compute efficiency during the parallel prompt phase, but during generation every single token has to read that massive cache from RAM.
+`Q8_0` had the fastest prompt processing (14.96, almost tied with Q4) but the slowest generation speed (3.85). that's because the model file is huge — you get good compute efficiency during the parallel prompt phase, but during generation every single token has to read that massive cache from RAM. generation speed dropped 46% compared to `Q2_K`, even though the model is only 2.8x larger. that's purely a bandwidth problem.
 
 `Q4_K_M` landed in the middle on size and came out best overall. this is why `Q4_K_M` is the industry standard everywhere. it's not magic. it's the best compromise.
 
@@ -193,18 +181,18 @@ then i sent a small chat completion request and timed two things:
 
 for a short prompt, i got:
 
-```text
+```
 first token latency: 0.981s
 generation speed:    5.35 tok/s
 total time:         13.308s
-tokens generated:         66
+tokens generated:       66
 ```
 
 that 0.981 second pause is dead air. users see nothing. then it suddenly streams at around 5 tokens per second. that's two completely different bottlenecks.
 
 the timeline looks like this:
 
-```text
+```
 0s                   0.981s                                     13.308s
 |--------------------|------------------------------------------|
 dead air             first token                                done
@@ -213,48 +201,36 @@ prompt processing    streaming at ~5.35 tok/s
 
 server logs confirmed the same pattern:
 
-```text
+```
 prompt eval time =   972.71 ms / 20 tokens
 eval time        = 12325.20 ms / 67 tokens
 ```
 
 the prompt processing finished in under 1 second. the generation took 12+ seconds. same model, same request, completely different speed profiles.
 
-so far i've been talking about cpu. what changes when you add a gpu?
-
 ## why gpu inference feels like a different universe
 
 the answer isn't that gpus are faster at math.
 
-once you look at the generation loop as a bandwidth problem, the gpu story gets very simple.
+once you look at the generation loop as a bandwidth problem, the gpu story gets very simple. gpus have much faster memory. not just more of it. much faster.
 
-gpus have much faster memory. not just more of it. much faster.
-
-on a cpu, you might get something like 50 to 100 GB/s of memory bandwidth.
-
-on a modern gpu, VRAM bandwidth is several hundred GB/s and often much higher.
-
-```text
+```
 +----------------------+    +----------------------+
-| CPU DRAM bandwidth   |    | GPU VRAM bandwidth   |
+| cpu dram bandwidth   |    | gpu vram bandwidth   |
 | 50-100 GB/s          |    | 500+ GB/s            |
 | cache reads crawl    |    | cache reads fly      |
 +----------------------+    +----------------------+
 ```
 
-that's not just faster. that's 5-10x faster for the exact same memory access pattern.
+that's 5-10x faster for the exact same memory access pattern. on gpu, that 2.9GB kv cache for 4096 tokens moves in milliseconds instead of hundreds of milliseconds. generation stops being the dominant bottleneck — compute becomes the bottleneck instead.
 
-on gpu, that 2.9GB kv cache for 4096 tokens moves in milliseconds instead of hundreds of milliseconds. generation stops being the dominant bottleneck.
-
-that changes the economics of generation completely. the model still has to read the kv cache every step, but the memory system is no longer dragging its feet nearly as much.
-
-so when people say GPUs are good for llms, the answer is not just because GPUs do more math. they also move model weights and cache data far more efficiently. for inference, especially generation, that distinction matters a lot.
+so when people say gpus are good for llms, the answer is not just because gpus do more math. they also move model weights and cache data far more efficiently. for inference, especially generation, that distinction matters a lot.
 
 ## what i understand now that i didn't before
 
 before doing these runs, i had a vague picture that inference was hard because transformers are big and matrix multiplies are expensive. that's true, but incomplete.
 
-that vague picture turned into something precise:
+Reality:
 
 - prompt processing likes parallel compute
 - generation lives inside a serial loop
@@ -269,15 +245,15 @@ this model explains real-world behavior:
 - why cpu inference feels sticky but gpu inference feels instant
 - why almost all inference optimization is really memory optimization in disguise
 
-and it doesn't require any magic or hand-waving.
+
 
 ## next steps
 
 if this got you curious:
 
-- try the thread scaling experiment: benchmark with `-t 4`, `-t 2`, `-t 1`
+- try thread scaling: benchmark with `-t 4`, `-t 2`, `-t 1` and watch where the bandwidth ceiling hits
 - test context length impact: run the same benchmark at `512`, `2048`, `4096`, `8192` tokens
-- download a `7B` model and benchmark it against `3B`
-- these will confirm the patterns you see here apply everywhere
+- download a `7B` model and benchmark it against `3B` — model size is the ultimate bandwidth multiplier
+- these will confirm that the patterns you see here apply everywhere
 
-try this on your own machine tonight. run the same benchmarks. the exact numbers will vary. the shape of the problem won't. once you see it, you can't unsee it.
+try this on your own machine tonight. run the same benchmarks. the exact numbers will vary.
