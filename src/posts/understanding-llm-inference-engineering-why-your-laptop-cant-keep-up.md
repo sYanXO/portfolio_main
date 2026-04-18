@@ -169,7 +169,7 @@ notice: smallest file does not mean fastest. this is the key insight about quant
 
 `Q2_K` had the fastest generation, but the slowest prompt processing. the likely reason is decompression overhead. 2-bit weights save memory traffic, but unpacking them costs cpu work.
 
-`Q8_0` had decent prompt speed and terrible generation speed. generation speed dropped 46% compared to `Q2_K`, even though the model is only 2.8x larger. that's purely a bandwidth problem.
+`Q8_0` had the fastest prompt processing (14.96, almost tied with Q4) but the slowest generation speed (3.85). that's because the model file is huge — you get good compute efficiency during the parallel prompt phase, but during generation every single token has to read that massive cache from RAM.
 
 `Q4_K_M` landed in the middle on size and came out best overall. this is why `Q4_K_M` is the industry standard everywhere. it's not magic. it's the best compromise.
 
