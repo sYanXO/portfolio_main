@@ -6,6 +6,7 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useViewCount from '../hooks/useViewCount';
 import { parseFrontmatter, postModules } from './Blog';
 
 function getPost(slug) {
@@ -27,6 +28,7 @@ function estimateReadingTime(text) {
 const BlogPost = () => {
   const { slug } = useParams();
   const post = getPost(slug);
+  const views = useViewCount(slug);
 
   useDocumentTitle(
     post ? `${post.meta.title || slug} | Sreayan De` : 'Not found | Sreayan De'
@@ -49,8 +51,20 @@ const BlogPost = () => {
         <h1>{meta.title || slug}</h1>
         <div className="post-meta">
           {meta.date && <span>{meta.date}</span>}
-          {meta.date && <span style={{ margin: '0 0.5rem' }}>·</span>}
+          {meta.date && <span className="meta-sep">·</span>}
           <span>{estimateReadingTime(content)}</span>
+          {views !== null && (
+            <>
+              <span className="meta-sep">·</span>
+              <span className="view-count">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                {views}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

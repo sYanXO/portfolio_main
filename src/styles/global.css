@@ -325,6 +325,22 @@ blockquote {
   margin-bottom: 0;
 }
 
+.meta-sep {
+  margin: 0 0.5rem;
+}
+
+.view-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.view-count svg {
+  opacity: 0.6;
+  position: relative;
+  top: -0.5px;
+}
+
 .post-body {
   line-height: 1.8;
 }
