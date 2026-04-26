@@ -40,3 +40,4 @@ follow these when writing or editing any post on this site.
 - repeating the same point in different words. trust the reader.
 - paragraphs that are just one long sentence. break them up.
 - sounding like a textbook. this is a blog, not documentation.
+- avoid formulaic contrast lines that sound generated. examples: "this isn't X, it's Y", "the real problem is not X", "there is no X. there is only Y." if the point matters, say it directly in one sentence.
