@@ -18,7 +18,7 @@ const About = () => {
       <ul className="home-links">
         <li><a href="https://github.com/sYanXO" target="_blank" rel="noopener noreferrer">GitHub</a></li>
         <li><a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noopener noreferrer">LeetCode</a></li>
-        <li><a href="https://drive.google.com/file/d/1j5ZqrJQD6dl32i5z0Rc9J27M_F5zzyeS/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume</a></li>
+        <li><a href="https://drive.google.com/file/d/18gfLdJMo8DjK3x9k0YKOCHoj1-NH7LJT/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume</a></li>
       </ul>
 
       <hr />
