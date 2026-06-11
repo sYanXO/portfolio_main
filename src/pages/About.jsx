@@ -14,6 +14,13 @@ const About = () => {
         actually works or why distributed systems lie to you.
       </p>
 
+      <h2>find me</h2>
+      <ul className="home-links">
+        <li><a href="https://github.com/sYanXO" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noopener noreferrer">LeetCode</a></li>
+        <li><a href="https://drive.google.com/file/d/1j5ZqrJQD6dl32i5z0Rc9J27M_F5zzyeS/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume</a></li>
+      </ul>
+
       <hr />
 
       <h2>what i'm into</h2>
@@ -30,10 +37,12 @@ const About = () => {
 
       <h2>currently obsessed with</h2>
       <ul>
-        <li>building a mini-git from scratch in C++ (yes, the plumbing commands too)</li>
-        <li>how consensus protocols handle it when the network just... doesn't</li>
-        <li>high-throughput data pipelines that don't melt under load</li>
-        <li>WebSocket-based real-time stuff, because polling is <strong>BORING</strong></li>
+        <li>building a raft-backed kv store in go (leader election, log replication, snapshotting)</li>
+        <li>mini kafka from scratch — append-only log, disk-backed segments, fsync tradeoffs</li>
+        <li>limit order books and matching engines, because every exchange is a data structures problem</li>
+        <li>websocket market data fanout, because polling is <strong>BORING</strong></li>
+        <li>tiny lsm-tree database — basically a mini rocksdb, every feature is a real tradeoff</li>
+        <li>dynamo-style kv stores — consistent hashing, vector clocks, eventual consistency done right</li>
         <li>LLM inference optimization — KV caches, speculative decoding, and why latency is everything</li>
         <li>the infra behind serving models: vLLM, TensorRT-LLM, and making GPUs actually earn their rent</li>
       </ul>
@@ -74,13 +83,6 @@ const About = () => {
       </ul>
 
       <hr />
-
-      <h2>find me</h2>
-      <ul className="home-links">
-        <li><a href="https://github.com/sYanXO" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-        <li><a href="https://leetcode.com/u/Sreayan/" target="_blank" rel="noopener noreferrer">LeetCode</a></li>
-        <li><a href="https://drive.google.com/file/d/1j5ZqrJQD6dl32i5z0Rc9J27M_F5zzyeS/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume</a></li>
-      </ul>
     </div>
   );
 };

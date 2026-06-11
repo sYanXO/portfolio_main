@@ -7,16 +7,16 @@
 @import url("https://cdn.jsdelivr.net/fontsource/fonts/geist-mono@latest/latin-500-normal.css");
 
 /* ===== highlight.js theme (GitHub-style, light) ===== */
-@import url("https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css");
+@import url("https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css");
 
 /* ===== CSS Variables ===== */
 :root {
-  --bg: #f9f6f1;
-  --text: #1a1a1a;
-  --text-muted: #6b6b6b;
-  --accent: #4a6fa5;
-  --accent-hover: #3b5d8e;
-  --border: #e0dbd4;
+  --bg: #0d1117;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --accent: #2dd4bf;
+  --accent-hover: #14b8a6;
+  --border: #21262d;
   --font-body: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   --content-width: 680px;
@@ -49,7 +49,7 @@ body {
 
 ::selection {
   background-color: var(--accent);
-  color: #fff;
+  color: #0d1117;
 }
 
 /* ===== Layout ===== */
@@ -144,7 +144,7 @@ hr {
 code {
   font-family: var(--font-mono);
   font-size: 0.88em;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.07);
   padding: 0.15em 0.4em;
   border-radius: 3px;
 }
@@ -152,7 +152,8 @@ code {
 pre {
   font-family: var(--font-mono);
   font-size: 0.88rem;
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: #161b22;
+  border: 1px solid var(--border);
   padding: 1.25rem 1.5rem;
   border-radius: 4px;
   overflow-x: auto;
@@ -424,7 +425,7 @@ blockquote {
 }
 
 .post-body th {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(255, 255, 255, 0.04);
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -433,11 +434,11 @@ blockquote {
 }
 
 .post-body tbody tr:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .post-body tbody tr:hover {
-  background-color: rgba(74, 111, 165, 0.06);
+  background-color: rgba(45, 212, 191, 0.06);
 }
 
 .post-body td:last-child {

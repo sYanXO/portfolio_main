@@ -2,18 +2,11 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
-    name: 'LLM Inference Bench',
-    desc: 'benchmarking harness for comparing LLM serving frameworks (vLLM, TGI, TensorRT-LLM). measures TTFT, throughput, and GPU util across different batch sizes and quantizations.',
-    github: '#',
+    name: 'HTTP Server from Scratch',
+    desc: 'built a small HTTP/1.1 server in Go from the ground up — raw TCP, manual request parsing, routing, and response handling. no net/http, just sockets and stubbornness.',
+    github: 'https://github.com/sYanXO/http-server-scratch',
     live: null,
-    status: 'wip',
-  },
-  {
-    name: 'mini-git',
-    desc: 'building git from scratch in Go because i wanted to understand what actually happens when you commit. plumbing commands, object model, the whole thing.',
-    github: '#',
-    live: null,
-    status: 'wip',
+    status: null,
   },
   {
     name: 'DB Uploader',
