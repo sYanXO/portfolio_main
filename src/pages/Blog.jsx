@@ -37,10 +37,38 @@ function getAllPosts() {
   return posts;
 }
 
+function formatMonth(dateString) {
+  if (!dateString) return 'undated';
+
+  const date = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'undated';
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  }).toLowerCase();
+}
+
+function groupPostsByMonth(posts) {
+  return posts.reduce((groups, post) => {
+    const month = formatMonth(post.date);
+    const existing = groups.find((group) => group.month === month);
+
+    if (existing) {
+      existing.posts.push(post);
+    } else {
+      groups.push({ month, posts: [post] });
+    }
+
+    return groups;
+  }, []);
+}
+
 const Blog = () => {
   useDocumentTitle('Blog | Sreayan De');
 
   const posts = getAllPosts();
+  const groupedPosts = groupPostsByMonth(posts);
 
   return (
     <div className="page">
@@ -49,15 +77,22 @@ const Blog = () => {
       {posts.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>nothing here yet. soon™</p>
       ) : (
-        <ul className="post-list">
-          {posts.map((post) => (
-            <li key={post.slug} className="post-item">
-              <Link to={`/blog/${post.slug}`}>{post.title || post.slug}</Link>
-              {post.date && <div className="post-meta">{post.date}</div>}
-              {post.description && <div className="post-desc">{post.description}</div>}
-            </li>
+        <div className="post-archive">
+          {groupedPosts.map((group) => (
+            <section key={group.month} className="post-month-group">
+              <h2>{group.month}</h2>
+              <ul className="post-list">
+                {group.posts.map((post) => (
+                  <li key={post.slug} className="post-item">
+                    <Link to={`/blog/${post.slug}`}>{post.title || post.slug}</Link>
+                    {post.date && <div className="post-meta">{post.date}</div>}
+                    {post.description && <div className="post-desc">{post.description}</div>}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

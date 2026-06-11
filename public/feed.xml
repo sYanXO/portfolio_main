@@ -7,6 +7,27 @@
     <language>en-us</language>
     <atom:link href="https://sreayan.dev/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
+      <title>building a small http server in go</title>
+      <link>https://sreayan.dev/blog/building-a-small-http-server-in-go</link>
+      <guid>https://sreayan.dev/blog/building-a-small-http-server-in-go</guid>
+      <pubDate>Thu, 11 Jun 2026 00:00:00 GMT</pubDate>
+      <description>i built a small go http server to understand routing, middleware, graceful shutdown, and the parts that get weird once requests overlap.</description>
+    </item>
+    <item>
+      <title>redis token bucket rate limiting in go</title>
+      <link>https://sreayan.dev/blog/redis-token-bucket-rate-limiter-in-go</link>
+      <guid>https://sreayan.dev/blog/redis-token-bucket-rate-limiter-in-go</guid>
+      <pubDate>Sun, 26 Apr 2026 00:00:00 GMT</pubDate>
+      <description>i needed a real per-ip limiter across multiple go instances, so i pushed the bucket into redis and made refill + consume atomic with lua.</description>
+    </item>
+    <item>
+      <title>the cache is lying to you</title>
+      <link>https://sreayan.dev/blog/the-cache-is-lying-to-you</link>
+      <guid>https://sreayan.dev/blog/the-cache-is-lying-to-you</guid>
+      <pubDate>Tue, 21 Apr 2026 00:00:00 GMT</pubDate>
+      <description>why the most common performance optimization in distributed systems is also one of its most dangerous failure modes</description>
+    </item>
+    <item>
       <title>Understanding LLM Inference Engineering: Why Your Laptop Can't Keep Up</title>
       <link>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</link>
       <guid>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</guid>

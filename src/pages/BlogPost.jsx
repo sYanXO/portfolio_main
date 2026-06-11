@@ -69,7 +69,25 @@ const BlogPost = () => {
       </div>
 
       <div className="post-body">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeHighlight, rehypeKatex]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeHighlight, rehypeKatex]}
+          components={{
+            a: ({ href, children, ...props }) => {
+              const isExternal = href?.startsWith('http://') || href?.startsWith('https://');
+              return (
+                <a
+                  href={href}
+                  target={isExternal ? '_blank' : undefined}
+                  rel={isExternal ? 'noopener noreferrer' : undefined}
+                  {...props}
+                >
+                  {children}
+                </a>
+              );
+            },
+          }}
+        >
           {content}
         </ReactMarkdown>
       </div>

@@ -280,13 +280,39 @@ blockquote {
 }
 
 /* ===== Blog Index ===== */
+.post-archive {
+  margin-top: 2rem;
+}
+
+.post-month-group {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: 2rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-month-group h2 {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
 .post-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .post-item {
   margin-bottom: 2rem;
+}
+
+.post-item:last-child {
+  margin-bottom: 0;
 }
 
 .post-item a {
@@ -534,5 +560,10 @@ blockquote {
   .page {
     padding-top: 2rem;
     padding-bottom: 3.5rem;
+  }
+
+  .post-month-group {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
