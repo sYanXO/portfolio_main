@@ -2,8 +2,8 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
-    name: 'HTTP Server from Scratch',
-    desc: 'built a small HTTP/1.1 server in Go from the ground up — raw TCP, manual request parsing, routing, and response handling. no net/http, just sockets and stubbornness.',
+    name: 'Distributed Rate-Limited HTTP Server',
+    desc: 'production-grade Go API server with a Redis-backed token bucket rate limiter (atomic via Lua), Prometheus metrics, context timeouts, graceful shutdown, and k6 load testing at ~7,600 RPS.',
     github: 'https://github.com/sYanXO/http-server-scratch',
     live: null,
     status: null,

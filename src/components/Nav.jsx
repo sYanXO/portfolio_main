@@ -11,7 +11,7 @@ const Nav = () => {
           <li><Link to="/" className={pathname === '/' ? 'active' : ''}>About</Link></li>
           <li><Link to="/blog" className={pathname.startsWith('/blog') ? 'active' : ''}>Blog</Link></li>
           <li><Link to="/projects" className={pathname === '/projects' ? 'active' : ''}>Projects</Link></li>
-          <li><a href="https://drive.google.com/file/d/18gfLdJMo8DjK3x9k0YKOCHoj1-NH7LJT/view?usp=sharing" target="_blank" rel="noopener noreferrer">Resume</a></li>
+          <li><a href="https://drive.google.com/file/d/1coskp0zWEFYQeu-GIPXAPAMnk19EZlRl/view" target="_blank" rel="noopener noreferrer">Resume</a></li>
         </ul>
       </div>
     </nav>
