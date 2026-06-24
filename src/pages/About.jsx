@@ -25,26 +25,29 @@ const About = () => {
 
       <h2>what i'm into</h2>
       <p>
-        i like building stuff that actually holds up under pressure. not the it-works-on-my-machine kind, but the kind where if your concurrency model is wrong, you lose
-        data and cry. that's what got me hooked on backend engineering and distributed systems.
+        i come from backend and systems work. Go, C++, the kind of code where if your concurrency model is wrong,
+        you lose data. that's still the foundation, but lately i've been pulling the thread on what happens
+        inside GPUs during ML inference.
       </p>
       <p>
-        outside of code, i'm into LLM inference, GPU infrastructure, and figuring out
-        why serving models at scale is way harder than training them.
+        right now that means writing CUDA kernels, understanding memory hierarchies (HBM vs SRAM, why it matters
+        more than arithmetic), and reading papers like FlashAttention from the perspective of someone who cares
+        about data movement, not gradients.
       </p>
 
       <hr />
 
       <h2>currently obsessed with</h2>
+      <p className="obsessed-disclaimer">
+        (this list rotates fast. maybe it's an attention issue, maybe it's too many interesting problems. either way, if you're reading this a month from now, assume half of it has changed.)
+      </p>
       <ul>
-        <li>building a raft-backed kv store in go (leader election, log replication, snapshotting)</li>
-        <li>mini kafka from scratch — append-only log, disk-backed segments, fsync tradeoffs</li>
-        <li>limit order books and matching engines, because every exchange is a data structures problem</li>
-        <li>websocket market data fanout, because polling is <strong>BORING</strong></li>
-        <li>tiny lsm-tree database — basically a mini rocksdb, every feature is a real tradeoff</li>
-        <li>dynamo-style kv stores — consistent hashing, vector clocks, eventual consistency done right</li>
-        <li>LLM inference optimization — KV caches, speculative decoding, and why latency is everything</li>
+        <li>CUDA kernels and GPU memory hierarchies — writing FlashAttention from scratch to understand why attention is memory-bound, not compute-bound</li>
+        <li>ML internals from the systems side — not training models, but understanding what the hardware actually does during inference. online softmax, tiling, HBM vs SRAM tradeoffs</li>
+        <li>transformer internals at the metal level — built one in raw C++ with AVX2, now moving to GPU kernels</li>
+        <li>LLM inference optimization — KV caches, speculative decoding, continuous batching, and why latency is everything</li>
         <li>the infra behind serving models: vLLM, TensorRT-LLM, and making GPUs actually earn their rent</li>
+        <li>distributed systems that don't lie — raft consensus, log replication, and the gap between "eventually consistent" and "actually correct"</li>
       </ul>
 
       <hr />
@@ -76,10 +79,10 @@ const About = () => {
 
       <h2>things that keep me up at night</h2>
       <ul>
-        <li>why do distributed systems papers just assume clocks work? they don't. they literally drift.</li>
-        <li>why is LLM inference still so expensive? we're leaving insane amounts of GPU utilization on the table.</li>
-        <li>do programming languages shape how we think about problems, or are we overthinking it?</li>
-        <li>is there a clean way to handle errors that isn't monads or exceptions? asking for a friend.</li>
+        <li>most ML code never touches the GPU's actual bottleneck. we're writing kernels that wait on memory, not math. how much performance are we leaving on the table?</li>
+        <li>why is LLM inference still so expensive? we're saturating HBM bandwidth on operations that could live in SRAM. the hardware is ahead of the software.</li>
+        <li>CUDA's programming model was designed for graphics. we're using it for attention kernels and matrix math. is there a better abstraction we haven't built yet?</li>
+        <li>at what point does understanding ML internals from the systems side become more valuable than understanding the math from the research side?</li>
       </ul>
 
       <hr />

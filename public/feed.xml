@@ -7,6 +7,13 @@
     <language>en-us</language>
     <atom:link href="https://sreayan.dev/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
+      <title>flashattention from first principles</title>
+      <link>https://sreayan.dev/blog/flashattention-from-first-principles</link>
+      <guid>https://sreayan.dev/blog/flashattention-from-first-principles</guid>
+      <pubDate>Wed, 24 Jun 2026 00:00:00 GMT</pubDate>
+      <description>i knew how attention worked in C++ but couldn't read the FlashAttention paper. the missing piece was one sentence: a sentence is a matrix. once that clicked, i wrote both kernels in CUDA and watched the tiled version pull 3x on a T4.</description>
+    </item>
+    <item>
       <title>building a small http server in go</title>
       <link>https://sreayan.dev/blog/building-a-small-http-server-in-go</link>
       <guid>https://sreayan.dev/blog/building-a-small-http-server-in-go</guid>
