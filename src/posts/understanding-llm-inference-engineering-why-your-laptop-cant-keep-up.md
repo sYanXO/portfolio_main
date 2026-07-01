@@ -1,5 +1,5 @@
 ---
-title: "Understanding LLM Inference Engineering: Why Your Laptop Can't Keep Up"
+title: "understanding llm inference engineering: why your laptop can't keep up"
 date: "2026-04-18"
 description: "i benchmarked a small llm on my cpu and finally saw where inference time actually goes."
 ---
@@ -56,7 +56,7 @@ for most of the tests i used this benchmark command:
 
 that gave me two numbers per run:
 
-```
+```text
 | phi3 3B Q4_K - Medium | pp512 | 15.60 +- 1.42 |
 | phi3 3B Q4_K - Medium | tg128 |  6.28 +- 0.07 |
 ```
@@ -75,7 +75,7 @@ generation is the opposite. once the prompt is done, the model has to produce th
 
 here's the difference visualized:
 
-```
+```text
 prompt tokens
     |
     v
@@ -111,7 +111,7 @@ every generated token needs to read the cache for all previous tokens. so the wo
 
 here's what the generation loop does:
 
-```
+```text
 step 1: read cache for 512 tokens  -> generate 1 token
 step 2: read cache for 513 tokens  -> generate 1 token
 step 3: read cache for 514 tokens  -> generate 1 token
@@ -125,7 +125,7 @@ on my machine, a 4096-token context used roughly 2.9GB more RAM than baseline. w
 
 let me benchmark the same model with different context lengths:
 
-```
+```text
 metric      512 ctx    4096 ctx   change
 pp speed    15.11      11.90      -21%
 tg speed     5.18       3.37      -35%
@@ -135,7 +135,7 @@ prompt processing degrades gracefully. generation crashes. that's because one is
 
 the crude mental model is:
 
-```
+```text
 time per generated token =
   kv cache bytes / memory bandwidth
   + matmul compute time
@@ -181,7 +181,7 @@ then i sent a small chat completion request and timed two things:
 
 for a short prompt, i got:
 
-```
+```text
 first token latency: 0.981s
 generation speed:    5.35 tok/s
 total time:         13.308s
@@ -192,7 +192,7 @@ that 0.981 second pause is dead air. users see nothing. then it suddenly streams
 
 the timeline looks like this:
 
-```
+```text
 0s                   0.981s                                     13.308s
 |--------------------|------------------------------------------|
 dead air             first token                                done
@@ -201,7 +201,7 @@ prompt processing    streaming at ~5.35 tok/s
 
 server logs confirmed the same pattern:
 
-```
+```text
 prompt eval time =   972.71 ms / 20 tokens
 eval time        = 12325.20 ms / 67 tokens
 ```
@@ -214,7 +214,7 @@ the answer isn't that gpus are faster at math.
 
 once you look at the generation loop as a bandwidth problem, the gpu story gets very simple. gpus have much faster memory. not just more of it. much faster.
 
-```
+```text
 +----------------------+    +----------------------+
 | cpu dram bandwidth   |    | gpu vram bandwidth   |
 | 50-100 GB/s          |    | 500+ GB/s            |
@@ -230,7 +230,7 @@ so when people say gpus are good for llms, the answer is not just because gpus d
 
 before doing these runs, i had a vague picture that inference was hard because transformers are big and matrix multiplies are expensive. that's true, but incomplete.
 
-Reality:
+reality:
 
 - prompt processing likes parallel compute
 - generation lives inside a serial loop
@@ -249,7 +249,7 @@ this model explains real-world behavior:
 
 ## next steps
 
-if this got you curious:
+some things to try:
 
 - try thread scaling: benchmark with `-t 4`, `-t 2`, `-t 1` and watch where the bandwidth ceiling hits
 - test context length impact: run the same benchmark at `512`, `2048`, `4096`, `8192` tokens

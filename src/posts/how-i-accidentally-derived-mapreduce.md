@@ -6,7 +6,7 @@ description: "i tried to count discord messages and ended up reinventing a 2004 
 
 here's the problem. you have a 2GB file containing 10 million discord messages. each line looks like this:
 
-```
+```text
 alice | 2026-04-01T12:34:56Z | lmao did you see that play
 bob   | 2026-04-01T12:35:02Z | yeah that was insane
 alice | 2026-04-01T12:35:15Z | i literally screamed
@@ -18,7 +18,7 @@ username, timestamp, message. pipe-delimited. you want to find the **top 10 most
 
 you read the file line by line, split on `|`, grab the username, and throw it into a hashmap. key is the username, value is the count. every time you see a username, increment by 1. when you're done, sort the map by value, take the top 10.
 
-```
+```text
 counts = {}
 for line in file:
     username = line.split("|")[0].strip()
@@ -46,7 +46,7 @@ so let's solve the general version. because if we can solve that, counting falls
 
 okay, new plan. split the 200GB file into smaller chunks, say 1GB each. process each chunk independently. for each chunk, build a hashmap of username to list of messages. write the results to disk. move on to the next chunk.
 
-```
+```text
 for each 1GB chunk:
     partial_results = {}
     for line in chunk:
@@ -67,7 +67,7 @@ here's the key insight that fixes everything.
 
 instead of splitting the file into random 1GB chunks, what if you split it **by username**? all of alice's messages go into `alice.txt`. all of bob's messages go into `bob.txt`. every user gets their own file.
 
-```
+```text
 for line in file (streaming, line by line):
     username = line.split("|")[0].strip()
     append line to file "{username}.txt"
@@ -87,7 +87,7 @@ except... do we actually need to load it into memory?
 
 if we're counting messages, we literally just need a single integer. start at 0. read a line, increment by 1. read another line, increment by 1. we stream through the entire file and our memory usage is: **one integer**. doesn't matter if the file is 10GB or 10TB. one integer.
 
-```
+```text
 count = 0
 for line in user_file:
     count += 1
@@ -101,7 +101,7 @@ because the mapper is **stateless**. it sees one line, emits one pair, moves on.
 
 the counting happens later, in the reducer, where it *is* someone's job to maintain state. but only for one key at a time, and only as a stream.
 
-## Summary
+## summary
 
 
 

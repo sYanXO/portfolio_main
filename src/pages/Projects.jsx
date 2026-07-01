@@ -2,6 +2,20 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
+    name: 'Attention Is All You Need, in Raw C++',
+    desc: 'single-file, zero-dependency transformer encoder in C++. matrix math, multi-head attention, SIMD matmul, 4-bit quantization, and a full forward pass you can hold in one file.',
+    github: 'https://github.com/sYanXO/baremetal-attention',
+    live: null,
+    status: null,
+  },
+  {
+    name: 'Tokenizer Cache',
+    desc: 'thread-safe LRU caching layer for tokenizer functions. wraps tiktoken, huggingface, or any str→int callable with sub-microsecond cache hits and ~10x speedup on repeated inputs.',
+    github: 'https://github.com/sYanXO/tokenizer-cache',
+    live: null,
+    status: null,
+  },
+  {
     name: 'Distributed Rate-Limited HTTP Server',
     desc: 'production-grade Go API server with a Redis-backed token bucket rate limiter (atomic via Lua), Prometheus metrics, context timeouts, graceful shutdown, and k6 load testing at ~7,600 RPS.',
     github: 'https://github.com/sYanXO/http-server-scratch',

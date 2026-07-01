@@ -7,6 +7,13 @@
     <language>en-us</language>
     <atom:link href="https://sreayan.dev/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
+      <title>building a tokenizer cache from scratch</title>
+      <link>https://sreayan.dev/blog/building-a-tokenizer-cache-from-scratch</link>
+      <guid>https://sreayan.dev/blog/building-a-tokenizer-cache-from-scratch</guid>
+      <pubDate>Wed, 01 Jul 2026 00:00:00 GMT</pubDate>
+      <description>a dict, a linked list, and a lock walk into an LLM pipeline. the result is a 10x speedup on repeated tokenization.</description>
+    </item>
+    <item>
       <title>flashattention from first principles</title>
       <link>https://sreayan.dev/blog/flashattention-from-first-principles</link>
       <guid>https://sreayan.dev/blog/flashattention-from-first-principles</guid>
@@ -14,11 +21,18 @@
       <description>i knew how attention worked in C++ but couldn't read the FlashAttention paper. the missing piece was one sentence: a sentence is a matrix. once that clicked, i wrote both kernels in CUDA and watched the tiled version pull 3x on a T4.</description>
     </item>
     <item>
-      <title>building a small http server in go</title>
-      <link>https://sreayan.dev/blog/building-a-small-http-server-in-go</link>
-      <guid>https://sreayan.dev/blog/building-a-small-http-server-in-go</guid>
+      <title>attention is all you need, in raw c++</title>
+      <link>https://sreayan.dev/blog/attention-is-all-you-need-in-raw-cpp</link>
+      <guid>https://sreayan.dev/blog/attention-is-all-you-need-in-raw-cpp</guid>
+      <pubDate>Wed, 17 Jun 2026 00:00:00 GMT</pubDate>
+      <description>i implemented a transformer encoder from scratch in c++ with zero dependencies. matrix math, multi-head attention, SIMD matmul, 4-bit quantization, and a full forward pass you can hold in one file.</description>
+    </item>
+    <item>
+      <title>building a distributed rate-limited http server in go</title>
+      <link>https://sreayan.dev/blog/building-a-distributed-rate-limited-http-server-in-go</link>
+      <guid>https://sreayan.dev/blog/building-a-distributed-rate-limited-http-server-in-go</guid>
       <pubDate>Thu, 11 Jun 2026 00:00:00 GMT</pubDate>
-      <description>i built a small go http server to understand routing, middleware, graceful shutdown, and the parts that get weird once requests overlap.</description>
+      <description>i built a go http server with distributed rate limiting via redis and lua, context timeouts, prometheus metrics, graceful shutdown, and load tested it at ~7,600 rps.</description>
     </item>
     <item>
       <title>redis token bucket rate limiting in go</title>
@@ -35,7 +49,7 @@
       <description>why the most common performance optimization in distributed systems is also one of its most dangerous failure modes</description>
     </item>
     <item>
-      <title>Understanding LLM Inference Engineering: Why Your Laptop Can't Keep Up</title>
+      <title>understanding llm inference engineering: why your laptop can't keep up</title>
       <link>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</link>
       <guid>https://sreayan.dev/blog/understanding-llm-inference-engineering-why-your-laptop-cant-keep-up</guid>
       <pubDate>Sat, 18 Apr 2026 00:00:00 GMT</pubDate>

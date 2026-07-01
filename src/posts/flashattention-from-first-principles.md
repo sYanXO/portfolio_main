@@ -26,7 +26,7 @@ the actual model weights are **Wq**, **Wk**, and **Wv**. three learned matrices 
 
 for a given input X, the computation is:
 
-```
+```text
 Q = X · Wq
 K = X · Wk
 V = X · Wv
@@ -70,7 +70,7 @@ online softmax changes this. instead of needing the full row, it maintains a **r
 
 when a new tile arrives with a larger max value, you apply a correction factor:
 
-```
+```text
 correction = exp(old_max - new_max)
 ```
 

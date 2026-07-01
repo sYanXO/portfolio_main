@@ -38,7 +38,7 @@ every request spends a token. if the bucket is empty, the request gets rejected.
 
 for a limit like *5 requests burst, then 1 request per second*, the bucket model maps directly onto the policy.
 
-## the real problem was not math
+## the concurrency bug
 
 the refill math is boring. the concurrency bug is the interesting part.
 

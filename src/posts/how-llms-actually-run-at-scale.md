@@ -27,7 +27,7 @@ a request enters stage 0, flows through its layers, then the activations get shi
 
 the parallelism comes from overlap. while stage 3 finishes request A, stage 2 is working on request B, stage 1 on C, and stage 0 starts D:
 
-```
+```text
 time ──►
          t1       t2       t3       t4       t5       t6
 stage 0  [req A]  [req B]  [req C]  [req D]
@@ -48,7 +48,7 @@ pipeline parallelism splits vertically (by layer). tensor parallelism splits *ho
 
 the core op in a transformer layer is a **matmul** (matrix multiplication): $Y = X \times W$ where $W$ is a giant weight matrix, for our 405B model shaped as $[16384 \times 16384]$. that's one matrix with 268 million parameters. you can split $W$ column-wise across 8 GPUs, so each GPU only holds and computes against a slice:
 
-```
+```text
           ┌─────────── W [16384 x 16384] ──────────┐
           │  slice 0  │  slice 1  │ ... │  slice 7  │
           └─────────────────────────────────────────┘
@@ -135,7 +135,7 @@ just for cache. on top of 810 GB of model weights. GQA helps, but at 1000 concur
 
 in the hybrid parallel setup from earlier, the cache shards naturally across the cluster:
 
-```
+```text
                     Node 0                          Node 1
               (layers 1-32)                   (layers 33-64)
      ┌────┬────┬────┬─── ───┐      ┌────┬────┬────┬─── ───┐

@@ -45,7 +45,7 @@ inline std::string sha1(const std::string& data) {
 }
 ```
 
-a couple things worth noting:
+some details on this:
 
 - `SHA_DIGEST_LENGTH` is 20. SHA-1 produces 160 bits, which is 20 bytes. we convert each byte to 2 hex characters, giving us the 40-character string you're used to seeing in git.
 - `reinterpret_cast` is needed because SHA-1 operates on raw `unsigned char` bytes. it knows nothing about text or meaning, it's just crunching bytes.
