@@ -2,6 +2,13 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
+    name: 'CaskDB',
+    desc: 'A persistent Key-Value store written in Go using an LSM-Tree architecture. Currently implementing the Write-Ahead Log (WAL) for crash recovery and an in-memory SkipList memtable before moving on to SSTable compaction.',
+    github: null,
+    live: null,
+    status: 'wip',
+  },
+  {
     name: 'Attention Is All You Need, in Raw C++',
     desc: 'single-file, zero-dependency transformer encoder in C++. matrix math, multi-head attention, SIMD matmul, 4-bit quantization, and a full forward pass you can hold in one file.',
     github: 'https://github.com/sYanXO/baremetal-attention',
@@ -27,20 +34,6 @@ const projects = [
     desc: 'a Go ingestion pipeline that throws massive JSON datasets into PostgreSQL using concurrent workers. basically stress-tested it until it stopped complaining.',
     github: 'https://github.com/sYanXO/db-uploader',
     live: null,
-    status: null,
-  },
-  {
-    name: 'Stake IPL',
-    desc: 'full-stack IPL prediction app with fake coins, admin-managed markets, and live leaderboards. built it for cricket nerds who like putting hypothetical money where their mouth is.',
-    github: 'https://github.com/sYanXO/Steak',
-    live: 'https://steak-hjli.vercel.app/',
-    status: null,
-  },
-  {
-    name: 'OptiShrink',
-    desc: 'client-side image compressor that hits exact file size targets. no uploads, no backend, just vibes and math.',
-    github: 'https://github.com/sYanXO/Opti-Shrink',
-    live: 'https://opti-shrink.vercel.app/',
     status: null,
   },
   {

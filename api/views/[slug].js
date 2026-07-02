@@ -19,8 +19,10 @@ async function redis(command, ...args) {
   return data.result;
 }
 
+const SALT = process.env.IP_HASH_SALT || 'default_local_salt';
+
 function hashIP(ip) {
-  return crypto.createHash('sha256').update(ip).digest('hex').slice(0, 16);
+  return crypto.createHash('sha256').update(ip + SALT).digest('hex').slice(0, 16);
 }
 
 export default async function handler(req, res) {
