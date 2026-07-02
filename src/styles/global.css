@@ -536,6 +536,131 @@ blockquote {
   color: var(--text-muted);
 }
 
+/* ===== GitHub Heatmap ===== */
+.gh-heatmap-wrapper {
+  margin: 2rem 0 1rem;
+}
+
+.gh-heatmap-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.gh-heatmap-label {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.gh-heatmap-total {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.gh-heatmap-total:hover {
+  color: var(--accent);
+}
+
+.gh-heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hover glow on cells */
+.gh-cell:hover {
+  filter: brightness(1.4);
+  outline: 1px solid rgba(45, 212, 191, 0.5);
+  outline-offset: 0;
+}
+
+/* Tooltip */
+.gh-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #1c2128;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text);
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.gh-tooltip strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.gh-tooltip span {
+  color: var(--text-muted);
+}
+
+/* Legend */
+.gh-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.gh-legend-cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Loading skeleton */
+.gh-heatmap-loading {
+  height: 112px;
+  display: flex;
+  align-items: center;
+}
+
+.gh-heatmap-skeleton {
+  width: 100%;
+  height: 96px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    #1c2128 50%,
+    var(--border) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s infinite linear;
+}
+
+@keyframes skeletonShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.gh-heatmap-error {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
   html {

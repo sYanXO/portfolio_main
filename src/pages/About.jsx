@@ -1,4 +1,5 @@
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import GithubHeatmap from '../components/GithubHeatmap';
 
 const About = () => {
   useDocumentTitle('Sreayan De');
@@ -77,13 +78,7 @@ const About = () => {
 
       <hr />
 
-      <h2>things that keep me up at night</h2>
-      <ul>
-        <li>most ML code never touches the GPU's actual bottleneck. we're writing kernels that wait on memory, not math. how much performance are we leaving on the table?</li>
-        <li>why is LLM inference still so expensive? we're saturating HBM bandwidth on operations that could live in SRAM. the hardware is ahead of the software.</li>
-        <li>CUDA's programming model was designed for graphics. we're using it for attention kernels and matrix math. is there a better abstraction we haven't built yet?</li>
-        <li>at what point does understanding ML internals from the systems side become more valuable than understanding the math from the research side?</li>
-      </ul>
+      <GithubHeatmap />
 
       <hr />
     </div>
