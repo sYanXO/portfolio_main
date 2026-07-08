@@ -1,27 +1,6 @@
 import { Link } from 'react-router-dom';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-
-// Import all markdown files from /src/posts/
-const postModules = import.meta.glob('../posts/*.md', { eager: true, query: '?raw', import: 'default' });
-
-function parseFrontmatter(raw) {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return { meta: {}, content: raw };
-
-  const metaBlock = match[1];
-  const content = match[2];
-  const meta = {};
-
-  for (const line of metaBlock.split('\n')) {
-    const idx = line.indexOf(':');
-    if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
-    meta[key] = value;
-  }
-
-  return { meta, content };
-}
+import { parseFrontmatter, postModules } from '../utils/blog';
 
 function getAllPosts() {
   const posts = [];
@@ -98,5 +77,4 @@ const Blog = () => {
   );
 };
 
-export { parseFrontmatter, postModules };
 export default Blog;
