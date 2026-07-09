@@ -4,30 +4,30 @@ date: "2026-04-14"
 description: "building a concurrent mapreduce engine from scratch to count discord messages."
 ---
 
-in the [last post](/blog/how-i-accidentally-derived-mapreduce), we derived mapreduce by reasoning through a memory constraint problem. three phases fell out of the constraints: stateless map, group-by-key shuffle, streaming reduce. now we build it.
+in the [last post](/blog/how-i-accidentally-derived-mapreduce), i derived mapreduce by working through a memory constraint problem. i ended up with three phases: a stateless map, a group-by-key shuffle, and a streaming reduce. now i'm building it.
 
-the implementation language is go. goroutines and channels map naturally onto the mapreduce model, even on a single machine. the implementation started sequential, then concurrency was added to the map phase. this post reflects the current state.
+i'm using go because goroutines and channels fit mapreduce perfectly, even on a single machine. i started with a sequential version, then made the map phase concurrent.
 
-source code: [github.com/sYanXO/mapReduce](https://github.com/sYanXO/mapReduce).
+code is on [github](https://github.com/sYanXO/mapReduce).
 
 ## the input
 
-pipe-delimited discord messages. one per line. format: `username | timestamp | message`. the goal: find the top 10 most active users by message count.
+the input is a list of pipe-delimited discord messages, one per line. the format is `username | timestamp | message`. i want to find the top 10 most active users by message count.
 
-i wrote a python generator script to produce a test file with 1 million lines across 10 hardcoded usernames. real-world data would have thousands of unique users. the generator is a simulation, not a realistic dataset. the pipeline handles both identically.
+i wrote a python script to generate 1 million lines using 10 usernames. a real dataset would have thousands of users, but the pipeline works the same either way.
 
 ## setup
 
-two things happen before any real work starts.
+two steps happen before the map phase starts.
 
-first, wipe and recreate the `intermediate/` directory. this ensures no stale data from previous runs bleeds into the current one.
+first, i wipe and recreate the intermediate directory so older runs don't corrupt the new one.
 
 ```go
 os.RemoveAll("intermediate")
 os.MkdirAll("intermediate", 0755)
 ```
 
-second, read all lines into memory as a `[]string` slice.
+second, i read every line into a `[]string` slice.
 
 ```go
 var lines []string
@@ -37,21 +37,21 @@ for scanner.Scan() {
 }
 ```
 
-this is a tradeoff worth being explicit about. loading the full input into RAM contradicts the streaming philosophy of the original design. the reason is pragmatic: distributing work across goroutines requires slicing the data into chunks, and slicing requires knowing the full dataset upfront. for truly massive files (larger than available RAM), this would be a problem. for 1 million lines on a modern machine, it's an acceptable simplification.
+loading the whole file into RAM goes against the streaming model i want. i did it because slicing the data for goroutines is much easier when you know the total line count upfront. it wouldn't work for huge files that exceed memory, but for a million lines on my laptop, it's a fine shortcut.
 
 ## map phase (concurrent)
 
-the mapper is stateless. it sees one line, extracts the username, emits `username,1` to an intermediate file, and moves on. no memory of previous lines. because each line is independent, this is embarrassingly parallel.
+the mapper is stateless. it reads a line, pulls out the username, writes `username,1` to a file, and moves to the next line. since the lines don't depend on each other, i can run this in parallel.
 
-we divide the `lines` slice into `numWorkers` equal chunks. `numWorkers` is hardcoded to 4. chunk size is calculated as:
+i split the `lines` slice into equal chunks for each worker. with `numWorkers` set to 4, i calculate the chunk size using ceiling division:
 
 ```go
 chunkSize := (len(lines) + numWorkers - 1) / numWorkers
 ```
 
-this is ceiling division. it matters because if you have 1,000,003 lines and 4 workers, regular integer division gives you 250,000 per chunk, leaving 3 lines unprocessed. ceiling division gives you 250,001, and the last chunk gets the remaining lines.
+using ceiling division ensures no lines get dropped. if i have 1,000,003 lines and 4 workers, regular integer division gives 250,000 per chunk, leaving 3 lines behind. ceiling division gives 250,001, so the last worker handles the leftover lines.
 
-one goroutine per chunk. each goroutine independently processes its slice of the input:
+then i spin up a goroutine for each chunk to process its lines:
 
 ```go
 wg.Add(1)
@@ -73,27 +73,27 @@ go func(chunk []string) {
 }(lines[start:end])
 ```
 
-`sync.WaitGroup` coordinates the goroutines. the main goroutine calls `wg.Wait()` and blocks until every worker has called `wg.Done()`.
+a `sync.WaitGroup` keeps the main program waiting until all worker goroutines finish their chunks.
 
 ### the mutex problem
 
-concurrent file writes are a race condition. if alice appears in chunk 1 and chunk 3, two goroutines try to append to `alice.txt` at the same time. without synchronization, the output gets corrupted.
+writing to files concurrently creates a race. if *alice* appears in two different chunks, two goroutines will try to append to `alice.txt` at the same time, corrupting the file.
 
-the fix is a `sync.Mutex` wrapping every file open, write, and close.
+i fixed this by wrapping the file operations in a `sync.Mutex`.
 
-here's what that actually means: the mutex serializes the file writes. goroutines process their chunks in parallel (splitting lines, extracting usernames), but they block on each other when writing to disk. the parallelism is real but partial. the CPU-bound work (string splitting, trimming) runs concurrently. the I/O-bound work (file writes) runs sequentially through the lock.
+this lock serializes the disk writes. the goroutines still split lines and trim strings in parallel, but they have to wait in line to write their results. the cpu work is concurrent, but the disk i/o is sequential.
 
-a cleaner approach would be per-worker intermediate files merged later, or per-username channels feeding dedicated writer goroutines. those eliminate the global lock entirely. but for this implementation, the mutex is correct even if not maximally efficient. getting correctness first and optimizing later is the right order.
+i could avoid the lock by writing to separate files for each worker and merging them later, or by routing writes through channels to a single writer goroutine. but a mutex is simpler to write and get correct. i prefer making it work first and optimizing it later.
 
 ## shuffle phase
 
-no explicit code. the `intermediate/` directory *is* the shuffle.
+i don't need any shuffle code. the `intermediate/` directory does that work for me.
 
-by routing each emission to a file named after the username, all of a user's data naturally lands in the same place. `alice.txt` contains every `alice,1` pair, regardless of which goroutine produced them. the filesystem does the grouping.
+because each write goes to a file named after the user, all data for *alice* lands in `alice.txt`. the filesystem handles the grouping.
 
 ## reduce phase
 
-sequential. read all files in `intermediate/` with `os.ReadDir`. for each file, stream through it line by line with a counter.
+the reduce phase runs sequentially. i read the `intermediate/` directory, open each file, and count the lines.
 
 ```go
 count := 0
@@ -103,13 +103,13 @@ for s.Scan() {
 }
 ```
 
-memory usage: one integer per user, regardless of how many messages they sent. alice could have 10 million messages and the reducer still holds a single `int`. extract the username from the filename (strip `.txt`), store the result in a `[]Result` slice.
+this keeps memory usage low: one integer per user. even if *alice* has 10 million messages, the reducer only holds a single `int` in memory at a time. i strip `.txt` from the filename to get the username and store the count in a slice.
 
 ## sort and output
 
-sort the results slice by count descending using `sort.Slice`. print the top 10.
+finally, i sort the slice in descending order and print the top 10 users.
 
-this is the actual output from running against 1 million generated lines:
+running this against the 1 million generated lines prints:
 
 ```text
 frank : 100622
@@ -124,23 +124,21 @@ henry : 99827
 iris : 99576
 ```
 
-the counts are roughly equal at ~100k each. the generator picks usernames with a uniform random distribution, so this is expected.
+since my generator script distributed names evenly, each user ends up with around 100,000 messages.
 
-## known limitations
+## what needs fixing
 
-- loading all lines into memory upfront. not suitable for files larger than available RAM.
-- mutex on file writes partially serializes the map phase. the concurrency is real but constrained.
-- `numWorkers = 4` is hardcoded. a real implementation would use `runtime.NumCPU()`.
-- reduce phase is still sequential. parallelizing it is a natural next step.
-- opening and closing a file handle for every single line. a real implementation would maintain a pool of open file handles.
+this implementation is simple, but it has some obvious bottleneck issues.
 
-## closing
+first, loading the entire file into memory is a bad idea for huge datasets. second, the mutex lock on the intermediate files ruins the map parallelism by forcing goroutines to write sequentially. i also hardcoded `numWorkers` to 4 instead of using `runtime.NumCPU()`, and opening a new file descriptor for every single line write is incredibly slow. a real pipeline would keep a pool of open file descriptors and let workers write to separate files to avoid locking.
 
-the map phase is concurrent. each worker independently processes its chunk. the core insight holds: because the mapper is stateless and each line is independent, parallelism is trivially achievable. the mutex is an implementation detail forced by shared filesystem access, not a fundamental limitation of the model.
+finally, the reduce phase is sequential. i should run that in parallel, too.
 
-a real distributed mapreduce sidesteps the mutex entirely. each mapper writes to its own local disk. the shuffle moves data over the network afterward. no shared filesystem, no lock contention. the distribution is just an optimization on top of the same idea.
+## next steps
 
-next step: parallelize the reduce phase.
+in a real distributed mapreduce, you don't share a filesystem. each worker writes to its own local disk, and the shuffle phase pulls that data over the network. that completely avoids the mutex lock i used here.
+
+my next step is to parallelize the reduce phase. i'll write about that in the next post.
 
 ```go
 package main

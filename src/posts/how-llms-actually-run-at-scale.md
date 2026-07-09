@@ -4,28 +4,28 @@ date: "2026-04-16"
 description: "a systems deep dive into what it takes to serve a 405B parameter model to thousands of users."
 ---
 
-say you've trained a 405B parameter model. something Llama 3.1 405B sized. it passes your evals, it handles instructions well, it doesn't hallucinate too badly. now you want to serve it. you spin up a GPU, load the weights, and it doesn't fit.
+i want to look at what it actually takes to serve a 405b parameter model. say, llama 3.1 405b. you spin up a gpu, load the weights, and it immediately out-of-memories.
 
-405 billion parameters. in **float16** (a compact number format that uses 2 bytes per value instead of the usual 4), that's:
+here is the math. at 16-bit precision (float16), a 405b model needs:
 
-$$405 \times 10^9 \times 2 \text{ bytes} = 810 \text{ GB}$$
+$$405 \times 10^9 \times 2 \text{ bytes} = 810 \text{ gb}$$
 
-your B200 has 192GB of **HBM3e** (high bandwidth memory, the ultra-fast RAM soldered directly onto the GPU die). $810 \gg 192$. you'd need a minimum of 5 GPUs just for the weights, and that's before **activations** (the intermediate outputs each layer produces as data flows through the model), KV cache, or any other runtime overhead.
+your brand new b200 gpu has 192gb of high bandwidth memory (hbm). since 810 is way bigger than 192, you need at least five gpus just to hold the model weights. and that is before we calculate the memory for activations (the intermediate tensors generated during the forward pass), the kv cache, or any system overhead.
 
-so now what? you need a cluster. let's assume you have the funds to get a cluster of B200s.
+to run this, we need a cluster. here is how we shard it.
 
-## pipeline parallelism: the assembly line
+## pipeline parallelism
 
-chop the model into stages by layers. a 405B model has 126 **transformer layers** (each layer is a self-contained block of attention + feedforward computation, stacked sequentially to form the full model). spread them across 4 pipeline stages:
+we can start by slicing the model vertically. this is pipeline parallelism. we take the 126 transformer layers of our 405b model and partition them across our gpus. if we have four stages, it looks like this:
 
-- **stage 0:** layers 1-32
-- **stage 1:** layers 33-64
-- **stage 2:** layers 65-96
-- **stage 3:** layers 97-126
+- **stage 0**: layers 1 to 32
+- **stage 1**: layers 33 to 64
+- **stage 2**: layers 65 to 96
+- **stage 3**: layers 97 to 126
 
-a request enters stage 0, flows through its layers, then the activations get shipped to stage 1. each subsequent stage does the same. a single request still flows *serially* through the pipeline. no latency improvement for one request.
+when a request comes in, stage 0 processes it and ships the intermediate outputs (the activations) to stage 1. stage 1 does its work and passes them to stage 2, and so on.
 
-the parallelism comes from overlap. while stage 3 finishes request A, stage 2 is working on request B, stage 1 on C, and stage 0 starts D:
+pipeline parallelism does not reduce the latency of a single request. a token still must pass through all 126 layers sequentially. instead, it increases throughput by overlapping multiple requests. while stage 3 is finishing request a, stage 2 can work on request b, and stage 1 can handle request c.
 
 ```text
 time ──►
@@ -40,13 +40,13 @@ stage 3                             [req A]  [req B]  [req C]
           work to trickle down)
 ```
 
-throughput is determined by the slowest stage, not the total end-to-end time. but notice the **pipeline bubble** at the start: stages 1-3 sit idle while the first request trickles through. the same happens in reverse at the end. for small batches, this idle time can dominate total runtime.
+the main downside here is the pipeline bubble. when we first start, stages 1, 2, and 3 are just sitting there waiting for stage 0 to finish its first forward pass. the same thing happens when the batch finishes. if we only run small batches, this idle time ruins our efficiency.
 
-## tensor parallelism: splitting within a layer
+## tensor parallelism
 
-pipeline parallelism splits vertically (by layer). tensor parallelism splits *horizontally* (within a single layer).
+instead of splitting the model by layers, we can also split it within a single layer. this is tensor parallelism.
 
-the core op in a transformer layer is a **matmul** (matrix multiplication): $Y = X \times W$ where $W$ is a giant weight matrix, for our 405B model shaped as $[16384 \times 16384]$. that's one matrix with 268 million parameters. you can split $W$ column-wise across 8 GPUs, so each GPU only holds and computes against a slice:
+the main work inside a transformer layer is matrix multiplication. we have $y = x \times w$, where $w$ is a weight matrix. for a 405b model, one of these matrices might be shaped as $16384 \times 16384$, which is about 268 million parameters. we can slice this matrix column-wise across eight gpus. each gpu only holds a slice of the weights and computes a partial output.
 
 ```text
           ┌─────────── W [16384 x 16384] ──────────┐
@@ -68,72 +68,67 @@ the core op in a transformer layer is a **matmul** (matrix multiplication): $Y =
                        full Y
 ```
 
-that **AllReduce** is the key cost. it's a collective communication operation: every GPU sends its partial result to every other GPU, and they all end up with the combined final answer. conceptually, 8 GPUs each compute a piece of the output, then synchronize so every GPU holds the complete result before the next layer can begin.
+to get the actual output $y$, the gpus have to combine their partial results using an `AllReduce` operation. this means every gpu sends its partial result to all other gpus in the group. once they synchronize, every gpu has the complete $y$ and can move on to the next step.
 
-this happens every layer, every forward pass, every token. for 126 layers with 128 attention heads, the system pushes gigabytes per second of inter-GPU traffic just to keep the math correct.
+we have to do this synchronization on every single layer, for every forward pass, for every single token we generate. with 126 layers, the gpus end up shuffling gigabytes of data back and forth every second just to keep their math synchronized.
 
-## why hybrid: nvlink inside, infiniband outside
+## nvlink and infiniband
 
-AllReduce is communication-heavy. how much communication it can sustain depends on how fast the GPUs can talk to each other, which depends on the physical wiring.
+because `AllReduce` requires constant communication, how we lay out the gpus physically matters a lot.
 
-inside a single server node (a physical machine with 8 GPUs on one motherboard), GPUs are connected by **NVLink**, a direct high-speed interconnect soldered onto the board. it's a dedicated point-to-point link with no shared bus contention.
+inside a single server node (an eight-gpu chassis), the gpus talk to each other over nvlink, which is a dedicated, direct interconnect on the motherboard. between different nodes in a server rack, the communication goes over infiniband network cables.
 
-between nodes (separate physical machines in a datacenter rack), communication goes over **InfiniBand**, a high-performance network fabric. fast by networking standards, but substantially slower than a direct on-board link.
+here is how the speeds compare:
 
 | interconnect | scope | bandwidth |
 |---|---|---|
-| **NVLink** (5th gen) | GPUs within a node | ~1.8 TB/s per GPU |
-| **InfiniBand** (NDR) | across nodes | ~50 GB/s |
+| nvlink (5th gen) | within a node | ~1.8 tb/s per gpu |
+| infiniband (ndr) | across nodes | ~50 gb/s |
 
-NVLink is ~36x faster. this dictates the entire parallelism strategy:
+nvlink is about 36 times faster. this massive speed difference determines how we shard the model:
 
-- **tensor parallelism** (AllReduce every layer, communication-heavy) stays *within* a node on NVLink where the bandwidth can handle it
-- **pipeline parallelism** (ships activations once per stage, much less frequent) goes *across* nodes on InfiniBand
+- we keep tensor parallelism within a single node. the constant `AllReduce` synchronization needs nvlink bandwidth to avoid stalling the gpus.
+- we use pipeline parallelism across nodes. shipping activations between pipeline stages happens far less often, so it can run over the slower infiniband connection.
 
-this is the **Megatron-LM** design, used across essentially all large-scale model deployments. for our 405B model: 4 nodes, 8 B200 GPUs each, 32 GPUs total. each node is one pipeline stage.
+this hybrid layout is the megatron-lm architecture. to run our 405b model, we might use four nodes with eight b200 gpus each, for 32 gpus total. each node acts as one pipeline stage.
 
-## micro-batching: fixing the bubble
+## micro-batching
 
-feeding one big batch into a 4-stage pipeline means stage 0 finishes, ships everything, then sits idle. 3/4 of the GPUs doing nothing.
+if we send one large batch through our four-stage pipeline, stage 0 finishes its work, ships it off, and then sits around waiting. three quarters of our cluster ends up idle.
 
-**micro-batching** fixes this: split the batch into many small chunks. stage 0 processes micro-batch 1, ships it, immediately starts micro-batch 2. by micro-batch 4, all stages are busy.
+we fix this by splitting the batch into smaller micro-batches. stage 0 processes micro-batch 1, ships it, and immediately starts on micro-batch 2. by the time the fourth micro-batch is in flight, all four pipeline stages are active.
 
-the tradeoff: each in-flight micro-batch needs its own memory for activations and KV cache (more on that soon). more micro-batches means smaller bubbles but higher memory pressure.
+the catch is memory. each active micro-batch needs to keep its activations and kv cache in memory. more micro-batches shrink the idle bubble, but they also eat up more gpu memory.
 
-## inference vs. training
+## how inference differs from training
 
-in training, the model stores all activations for the **backward pass** (the phase where gradients are computed and weights are updated by working backwards through the layers). for a 405B model, that's hundreds of GB of saved intermediate values on top of the weights. **gradient checkpointing** trades compute for memory: only store activations at periodic checkpoints (say every 4th layer), and recompute the rest during backprop.
+during training, we have to keep all activations in memory for the backward pass so we can calculate gradients and update the weights. for a 405b model, storing these intermediate values takes hundreds of gigabytes. we often use gradient checkpointing, which means we only save activations every few layers and recompute the rest on the fly during the backward pass to save memory.
 
-inference has no backward pass. each layer computes its output, ships it forward, and the previous activations get freed immediately. much lighter on memory.
+inference is much simpler because there is no backward pass. each layer computes its outputs, hands them to the next layer, and immediately discards its own activations. this makes inference much lighter on memory.
 
-what inference *does* keep around is something else entirely.
+but inference has to store something else instead: the kv cache.
 
 ## the kv cache
 
-this is the most misunderstood part of LLM serving. the KV cache is *not* storing your conversation as text. it stores precomputed **Key and Value tensors** from the attention mechanism (the part of the transformer that lets each token look at and weigh every other token in the sequence).
+the kv cache stores precomputed key and value vectors from the attention layers, rather than raw text.
 
-the problem it solves: every new token needs to attend to all previous tokens. without caching, generating token $n$ means recomputing K and V vectors for all $n-1$ previous tokens from scratch. cost grows quadratically with sequence length.
+every time the model generates a new token, that token needs to look back at all previous tokens. if we did not cache anything, generating token 100 would require us to recompute the key and value vectors for the first 99 tokens from scratch. the computational cost would scale quadratically with the sequence length.
 
-with the KV cache:
-- each token's K and V vectors get computed once and appended to the cache
-- the next token computes only *its own* K and V, then attends over the cached history
-- old tokens never get reprocessed
+with the cache, we only compute the key and value vectors for the new token, save them, and run attention over the historical vectors we already saved. we never reprocess old tokens.
 
-the context awareness that makes an LLM feel like it remembers your conversation lives in these vectors, not in stored text. they're a compressed, learned representation in the model's internal coordinate space.
+let's look at the memory cost. llama 3.1 405b uses grouped query attention (gqa), which means multiple attention heads share the same key and value vectors. instead of having 128 separate key-value pairs, it only has eight. this reduces the cache size:
 
-how big is it? Llama 405B uses **grouped query attention** (GQA), an optimization where multiple attention heads share a single set of K/V vectors. instead of 128 separate K/V head pairs, it uses just 8. this shrinks the cache dramatically:
+$$\text{per token} = 126 \text{ layers} \times 8 \text{ KV heads} \times 128 \text{ dim} \times 2 \text{ bytes} \times 2 \text{ (K and V)} \approx 0.5 \text{ mb}$$
 
-$$\text{per token} = 126 \text{ layers} \times 8 \text{ KV heads} \times 128 \text{ dim} \times 2 \text{ bytes} \times 2 \text{ (K and V)} \approx 0.5 \text{ MB}$$
+that means:
+- one user with a 10k token history needs 5gb of cache
+- 1,000 users with 10k tokens each need 5tb of cache
 
-$$\text{1 user, 10k tokens} = 5 \text{ GB}$$
+remember, this 5tb of cache is in addition to the 810gb needed for the model weights. even with optimizations like gqa, concurrent users quickly run up a massive memory bill.
 
-$$\text{1000 users, 10k tokens each} = 5 \text{ TB}$$
+## distributing the kv cache
 
-just for cache. on top of 810 GB of model weights. GQA helps, but at 1000 concurrent users the numbers are still significant.
-
-## kv cache in a distributed setting
-
-in the hybrid parallel setup from earlier, the cache shards naturally across the cluster:
+since we partitioned our model across 32 gpus, the kv cache naturally shards across the cluster as well:
 
 ```text
                     Node 0                          Node 1
@@ -151,77 +146,59 @@ in the hybrid parallel setup from earlier, the cache shards naturally across the
      (horizontal: by head)         (horizontal: by head)
 ```
 
-- **pipeline parallelism** splits vertically: each node owns the KV cache for *its* layers (node 0 for layers 1-32, node 1 for 33-64, etc.)
-- **tensor parallelism** splits horizontally: the 8 KV heads are divided across 8 GPUs within a node, each storing K/V for its assigned head
+pipeline parallelism shards the cache vertically. node 0 keeps the cache for layers 1 to 32, node 1 keeps it for layers 33 to 64, and so on.
 
-one user's conversation context is physically scattered across all 32 GPUs in the cluster. a single conversation, fragmented across 4 nodes in a structured, deterministic pattern.
+tensor parallelism shards the cache horizontally. the eight attention heads are split across the eight gpus inside each node, so each gpu stores the key and value vectors for just one head.
 
-## pagedattention: virtual memory for kv cache
+this means a single user's conversation context is physically fragmented across all 32 gpus in a deterministic layout.
 
-you don't know how long a response will be. naive approach: allocate the max sequence length (128k tokens for Llama 405B) worth of cache per request. most requests use a tiny fraction of that. massive waste.
+## pagedattention
 
-**PagedAttention** (the foundation of [vLLM](https://github.com/vllm-project/vllm)) borrows from how operating systems manage RAM. instead of giving each request one big contiguous block, it uses fixed-size **pages** (small blocks, say 16 tokens of KV cache each):
+when a request comes in, we don't know how many tokens the model will generate. the naive way to handle this is to allocate enough memory for the maximum possible sequence length, which is 128k tokens for llama 3.1. because most responses are much shorter, this leaves a huge amount of allocated memory sitting empty.
 
-- pages are scattered across GPU memory, not contiguous
-- requests grab pages on demand as they generate more tokens
-- finished requests release pages back to a free pool
+pagedattention, which is what vLLM is built on, solves this by borrowing the virtual memory page design from operating systems. instead of allocating one massive contiguous block of memory for a request, we divide the kv cache into fixed-size pages (usually 16 tokens per page).
 
-same idea as virtual memory in your OS: your program *thinks* it has a big contiguous block of RAM, but the OS is actually juggling scattered physical pages behind the scenes.
+these pages are scattered across the gpu memory rather than being contiguous. as the model generates tokens, it allocates new pages on demand. when a request finishes, its pages go back into a pool of free blocks.
 
-result: near-zero internal fragmentation, memory utilization from ~20% to ~100%. small requests grab free pages without waiting for large contiguous blocks to open up.
+this cuts down internal fragmentation and pushes memory utilization close to 100%. we no longer have to wait for massive contiguous chunks of memory to free up before we can run a request.
 
 ## continuous batching
 
-a standard approach to serving is **static batching**: collect N requests, process them all together, return results when the *longest* one finishes, then start the next batch. the problem is head-of-line blocking. if one request in a batch of 32 generates 2000 tokens while the rest finish in 50, those 31 slots sit occupied but idle for the remaining 1950 steps. the GPU is generating padding for finished requests.
+if we use static batching, we group $n$ requests together, run them, and wait until the longest response finishes before we send the next batch. this creates head-of-line blocking. if one request in a batch of 32 takes 2,000 tokens to finish while the other 31 finish in 50 tokens, those 31 slots sit idle for the next 1,950 steps. the gpu is basically wasting cycles calculating padding tokens.
 
-**continuous batching** (also called iteration-level scheduling) rethinks this at the granularity of individual generation steps:
+continuous batching, or iteration-level scheduling, fixes this by working at the level of individual tokens. at every step, the scheduler checks if any request has hit its stop token or reached its maximum length. if it has, we immediately evict it, free its cache pages, and slide a new request from the queue into the empty slot. the batch layout changes on every single step.
 
-- at every single token generation step, the scheduler checks which requests have finished (hit their stop token or max length)
-- finished requests are evicted immediately and their KV cache pages are freed
-- new requests from the queue are slotted into the freed positions
-- the batch composition changes on every iteration
+this makes a massive difference in utilization. if we have a stream of requests with varying lengths, static batching might only yield 30% to 40% gpu utilization because short requests hold slots hostage. continuous batching keeps utilization high because slots are recycled immediately.
 
-the effect is substantial. consider 1000 requests arriving over 10 seconds with response lengths varying from 20 to 2000 tokens. with static batching, average GPU utilization might be 30-40% because short requests hold slots hostage. with continuous batching, utilization stays above 90% because slots are recycled the instant a request completes.
+the engineering here is tricky. the scheduler has to map pages, track sequence positions for dozens of active requests, and update the page tables on every token step without adding latency. this scheduling logic is a core part of libraries like vLLM, TensorRT-LLM, and TGI.
 
-the bookkeeping is nontrivial: the scheduler must manage per-request KV cache pages, track independent sequence positions for each active request, and handle the PagedAttention page tables, all without introducing per-step latency overhead. this is standard in vLLM, TensorRT-LLM, and TGI.
+## offloading the cache
 
-## kv cache offloading
-
-GPU HBM is fast but scarce. KV cache retrieval is a **memory bandwidth problem**, not a compute problem. reading K/V vectors to compute attention is a large memory read followed by a comparatively small matrix operation. this means you can use slower, cheaper memory if you can tolerate the added latency:
+gpu memory is fast but expensive. reading key and value vectors during attention is limited by memory bandwidth rather than raw compute. we are doing a massive read from memory for a relatively small matrix multiplication. because of this, we can offload some of this data to slower memory tiers if we can tolerate the extra latency.
 
 | tier | bandwidth | capacity | cost |
 |---|---|---|---|
-| GPU HBM (B200) | ~8 TB/s | 192 GB | $$$ |
-| CPU DRAM | ~100 GB/s | 512 GB - 2 TB | $$ |
-| NVMe SSD | ~7 GB/s | 4-16 TB | $ |
+| gpu hbm (b200) | ~8 tb/s | 192 gb | $$$ |
+| cpu dram | ~100 gb/s | 512 gb - 2 tb | $$ |
+| nvme ssd | ~7 gb/s | 4-16 tb | $ |
 
-offloading KV cache to CPU DRAM via **PCIe** (the standard bus connecting the GPU card to the rest of the server, ~64 GB/s) adds latency per token but expands available cache memory by an order of magnitude. a server with 1TB of DRAM can hold far more concurrent conversations than 192GB of HBM.
+if we offload the kv cache to cpu memory over PCIe (which handles around 64 gb/s), we add latency to each token but get a massive boost in capacity. a server with 1tb of cpu memory can hold far more active sessions than the 192gb of hbm on a b200.
 
-the key insight is that not all KV cache is equally hot. actively-generating requests need their cache on-GPU for low-latency access. but requests that are paused (waiting for user input, preempted by the scheduler, or in a queue) don't need fast access at all. their cache can sit in CPU DRAM until the request resumes, at which point the relevant pages are prefetched back to GPU.
+the trick is that not all cache pages are equally active. a request that is actively generating tokens needs its pages on the gpu. but if a request is paused, waiting for user input, or waiting in a queue, its cache can sit in cpu memory. we only copy it back to the gpu when the scheduler resumes it.
 
-SSD offloading pushes this further. **FlexGen** explored aggressive GPU-to-CPU-to-SSD tiering for throughput-oriented batch workloads: if you don't need interactive latency (processing a backlog of requests offline), you can serve batch sizes that would otherwise be impossible by letting KV cache spill to disk. the tradeoff is steep: NVMe latency compounds across 126 layers and can push per-token time into seconds. viable for batch processing, not for a chatbot.
+we can even offload all the way to nvme ssds. tools like FlexGen do this for massive batch jobs where throughput matters more than response time. letting the cache spill to disk allows us to run huge batch sizes, but nvme read latencies compound across all 126 layers. that can push token generation times into seconds, which is fine for background batch processing but too slow for a chatbot.
 
-the practical approach for interactive serving: keep actively-generating cache on GPU, move idle/preempted cache to CPU DRAM, and size the DRAM tier to handle your expected concurrency.
+for interactive serving, the sweet spot is keeping active cache pages on the gpu, moving idle pages to cpu memory, and sizing the cpu memory to match the maximum expected concurrent users.
 
-## fault tolerance: the hard truth
+## what happens when a gpu dies
 
-in a hybrid parallel replica, every GPU does something unique:
-- pipeline parallel GPUs own **different layers**
-- tensor parallel GPUs own **different slices** of each layer
+when we run a model sharded across a cluster, we have zero redundancy within the replica. every gpu is doing a unique job:
 
-there's no redundancy. no backup. if one GPU dies:
-- the pipeline has a missing stage. no request can flow through it.
-- the matmul has 7/8 of a weight matrix. you can't do linear algebra with a missing slice.
-- that GPU's KV cache shard is gone. every active request loses part of its context.
+- gpus running pipeline parallelism hold different layers.
+- gpus running tensor parallelism hold different slices of the weight matrices.
 
-the entire replica is dead. all 32 GPUs rendered useless by one failure.
+if a single gpu dies, the entire replica falls apart. the pipeline loses a stage, the matrix multiplications lose a slice of their weights, and all the kv cache stored on that gpu is gone. all 32 gpus in the replica become useless.
 
-fault tolerance comes from running **multiple complete replicas** behind a load balancer. lose one of 4 replicas and the remaining 3 absorb 33% more traffic. but they were already loaded. one dead GPU doesn't just remove capacity, it cascades into latency spikes across healthy replicas.
+to get fault tolerance, we have to run multiple complete replicas of the cluster behind a load balancer. if one replica goes down, the load balancer routes traffic to the surviving replicas. but because gpus are expensive, we rarely run with much spare capacity. losing one replica means the survivors have to absorb the extra traffic, which easily turns a single hardware failure into a wider latency spike.
 
-## the real hard part
-
-the ML is almost the easy part. training a model is well-understood (if expensive). the architecture, the data pipelines, the training recipes are largely converged.
-
-the hard part is everything around serving it: load balancing across replicas with heterogeneous request lengths, autoscaling GPU clusters at \$30/hr per node, capacity planning against bursty traffic, memory management across HBM/DRAM/NVMe, and fault tolerance in a system where every GPU is a single point of failure within its replica.
-
-LLM inference at scale is a distributed systems problem. the model is just the function that runs on top of the actual engineering.
+ultimately, serving these models is a classic systems engineering problem. once you look past the neural network weights, you are left with memory bandwidth bottlenecks, network latency, and scheduling queues. the model itself is just a set of big files; the hard part is building the machinery to stream them to thousands of users without going broke.

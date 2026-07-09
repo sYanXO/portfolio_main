@@ -4,17 +4,13 @@ date: "2026-06-11"
 description: "i built a go http server with distributed rate limiting via redis and lua, context timeouts, prometheus metrics, graceful shutdown, and load tested it at ~7,600 rps."
 ---
 
-i wanted to understand what happens inside a normal http api after the route matches but before the response leaves the process.
+most web frameworks hide how requests flow through a server. to understand what happens between routing a request and returning a response, i built a simple user api in go from scratch. i wanted to deal with concurrent state, distributed rate limiting, timeouts, and graceful shutdown myself.
 
-using a framework would have hidden too much. i needed a server small enough to hold in my head, but real enough to make me deal with concurrency, distributed state, request limits, bad input, shutdown, and tests.
-
-so i built a user api in go with a redis-backed rate limiter, prometheus metrics, and enough load testing to prove it works under pressure.
-
-[source code](https://github.com/sYanXO/http-server-scratch).
+here is the [source code](https://github.com/sYanXO/http-server-scratch).
 
 ## the shape of the server
 
-four routes, plus a prometheus metrics endpoint:
+the server exposes four routes and a metrics endpoint:
 
 ```go
 mux.Handle("/", wrap(http.HandlerFunc(handlers.HandleRoot)))
@@ -30,22 +26,20 @@ mux.Handle("DELETE /users/{id}", wrap(http.HandlerFunc(func(w http.ResponseWrite
 mux.Handle("/metrics", promhttp.Handler())
 ```
 
-small surface area. the interesting part is where each responsibility lives:
+the project structure keeps responsibilities separated:
 
-- `cmd/server`: process startup, route wiring, shutdown
-- `internal/handlers`: http input and output
-- `internal/store`: shared in-memory user state
-- `internal/middleware`: rate limit enforcement with fail-open/fail-closed
-- `internal/rate-limiter`: redis client, lua script, `Limiter` interface
-- `internal/metrics`: prometheus counters, histograms, and a response-capturing middleware
+- `cmd/server` handles startup, route wiring, and shutdown.
+- `internal/handlers` processes incoming requests and formats responses.
+- `internal/store` manages shared user state in memory.
+- `internal/middleware` enforces rate limits.
+- `internal/rate-limiter` talks to redis and runs rate-limit checks.
+- `internal/metrics` tracks performance data for prometheus.
 
-that split gave me enough structure without turning the project into a ceremony generator.
+this layout provides organization without unnecessary boilerplate.
 
-## routing stayed boring on purpose
+## using standard library routing
 
-go's `http.ServeMux` is good enough here.
-
-recent go versions support method-aware patterns like `POST /users` and path values like `/users/{id}`. that means i could write normal handlers without pulling in a router package just to extract one integer.
+the standard `http.ServeMux` works well enough. recent go releases support method-aware patterns and path values, so i could write standard handlers without importing a routing library just to extract integers.
 
 ```go
 id, err := strconv.Atoi(r.PathValue("id"))
@@ -55,11 +49,11 @@ if err != nil {
 }
 ```
 
-dependencies should earn their place. for this project, the standard library already had the routing features i needed.
+the standard library had all the routing features needed for this.
 
-## concurrency shows up at the store
+## protecting shared state
 
-the user store is a map:
+the user store uses a basic map:
 
 ```go
 type UserStore struct {
@@ -69,11 +63,7 @@ type UserStore struct {
 }
 ```
 
-a map is fine until more than one request touches it at once.
-
-`POST /users` writes. `GET /users/{id}` reads. `DELETE /users/{id}` writes. under concurrent traffic, the store needs a lock.
-
-i used an `RWMutex` because reads can share the lock while writes need exclusive access:
+since multiple requests read and write concurrently, the map needs a lock to prevent race conditions and panics. i used an `RWMutex` so multiple reads can run concurrently while writes get exclusive access.
 
 ```go
 func (s *UserStore) Get(id int) (User, bool) {
@@ -85,24 +75,19 @@ func (s *UserStore) Get(id int) (User, bool) {
 }
 ```
 
-without the mutex, the code can panic or return nonsense under load. with the mutex, the boundary is obvious. shared state needs a rule. the lock is the rule.
+this lock ensures all state updates remain safe under load.
 
-## request bodies deserve suspicion
+## validating request bodies
 
-the create handler does more than decode json. it limits the body size:
+the handler limits the request body to 1MB and rejects unexpected json fields to prevent memory bloat and API contract drift:
 
 ```go
 r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-```
-
-it rejects unknown fields:
-
-```go
 dec := json.NewDecoder(r.Body)
 dec.DisallowUnknownFields()
 ```
 
-and it rejects multiple json objects in one request body:
+it also checks that the body contains only one json object:
 
 ```go
 if err := dec.Decode(&struct{}{}); err != io.EOF {
@@ -111,17 +96,13 @@ if err := dec.Decode(&struct{}{}); err != io.EOF {
 }
 ```
 
-that last check feels tiny, but it changes the contract. the handler accepts one user object, not one user object plus extra junk after it.
+this stops clients from trailing extra payload after the valid json object.
 
-input validation is where a server decides how much weirdness it is willing to accept.
+## rate limiting with redis and lua
 
-## the rate limiter moved to redis
+an in-memory token bucket works for a single process, but it fails once you run multiple instances. if a load balancer routes requests across different nodes, each node only tracks its local bucket, allowing clients to bypass the limit.
 
-my first version used an in-memory token bucket. it worked fine for a single process, then became fake the moment you imagined two instances.
-
-instance A would allow a request because its local counter looked fine. instance B would do the same a millisecond later. both were technically correct. operationally the limiter was a suggestion.
-
-so i pushed the bucket into redis and made the whole check-and-consume atomic with a lua script. i wrote about the lua script in detail in a [separate post](/blog/redis-token-bucket-rate-limiter-in-go). the short version:
+to fix this, i moved the bucket state to redis. running the check-and-refill logic in a lua script makes the entire operation atomic:
 
 ```lua
 local bucket = redis.call("HMGET", key, "tokens", "last_refill")
@@ -147,9 +128,9 @@ redis.call("HMSET", key, "tokens", tokens, "last_refill", now)
 redis.call("EXPIRE", key, ttl)
 ```
 
-redis runs the entire script as one atomic operation. no other command can interleave. two concurrent requests from the same IP can never both see `tokens = 1` and both pass.
+redis runs this script atomically, preventing concurrent requests from racing to read and update the same key.
 
-the rate limiter is behind a `Limiter` interface, so swapping implementations (or mocking in tests) is straightforward:
+the rate limiter is behind an interface, which makes it easy to mock in tests:
 
 ```go
 type Limiter interface {
@@ -157,7 +138,7 @@ type Limiter interface {
 }
 ```
 
-the `RedisLimiter` implements this by computing `now` in milliseconds, building the redis key, and running the lua script:
+the implementation computes the current time, constructs the redis key, and executes the lua script:
 
 ```go
 func (rl *RedisLimiter) Allow(ctx context.Context, identifier string) (bool, error) {
@@ -179,11 +160,11 @@ func (rl *RedisLimiter) Allow(ctx context.Context, identifier string) (bool, err
 }
 ```
 
-one method, one question, one answer. the middleware never needs to know about refill math, redis hashes, or lua.
+the middleware just calls `Allow` and gets a true or false answer, hiding all redis details.
 
-## context timeouts prevent cascading failures
+## timeouts for redis queries
 
-the middleware wraps every redis call with a strict 50ms context deadline:
+to prevent redis latency from blocking server threads, the middleware wraps every rate-limit check in a 50ms context deadline:
 
 ```go
 ctx, cancel := context.WithTimeout(r.Context(), 50*time.Millisecond)
@@ -192,15 +173,11 @@ defer cancel()
 allowed, err := l.Allow(ctx, ip)
 ```
 
-without that, a redis network hang would block the handler goroutine indefinitely. under load, blocked goroutines pile up, memory climbs, and eventually the server stops responding to anyone (including requests that never needed redis).
+without a timeout, a slow redis query or network lag would block handler goroutines indefinitely. under load, these blocked routines pile up, consume memory, and can crash the process. 50ms is plenty of time for a normal redis query; if it takes longer, the server needs to stop waiting and handle the failure.
 
-50ms is generous for a local redis call that normally takes sub-millisecond. if it takes longer than that, something is wrong and the server should make a decision rather than wait.
+## choosing a failure policy
 
-## failing open is a policy decision
-
-when redis is unreachable and the context deadline fires, the middleware has to pick: block the request or let it through?
-
-the middleware takes a `failOpen` boolean so the caller controls the policy:
+if redis times out or fails, the middleware must decide whether to let the request pass or reject it. a `failOpen` flag configures this choice:
 
 ```go
 if err != nil {
@@ -213,17 +190,11 @@ if err != nil {
 }
 ```
 
-right now it fails open. if redis is down, requests pass through unthrottled.
+failing open keeps the api responsive during redis outages, which is usually fine for public resource endpoints. for auth or payment endpoints, failing closed is safer because it prevents abuse when rate limiting is down.
 
-that is acceptable for a general api where availability matters more than strict fairness. for auth endpoints, billing routes, or anything abuse-prone, you would fail closed instead. denying some good traffic is often cheaper than allowing unbounded bad traffic.
+## tracking metrics
 
-the code change is one boolean. the hard part is deciding what failure mode your product can tolerate.
-
-## prometheus metrics
-
-i wanted to know what the server was doing under load without tailing logs. so i added prometheus instrumentation.
-
-three metrics cover the important questions:
+i added prometheus metrics to track behavior under load without parsing logs. three metrics cover the server:
 
 ```go
 HttpRequestsTotal = promauto.NewCounterVec(
@@ -251,19 +222,17 @@ HttpRequestDuration = promauto.NewHistogramVec(
 )
 ```
 
-`http_requests_total` tells me how much traffic each endpoint gets and how it responds. `rate_limit_rejections_total` tracks how aggressively the limiter is firing. `http_request_duration_seconds` gives latency percentiles per endpoint.
-
-the metrics middleware wraps the entire mux and uses a custom `responseWriter` to capture status codes without changing how handlers behave:
+a custom response writer wraps standard response writers to record status codes without altering handler behavior, and a middleware uses this wrapper around the main router:
 
 ```go
 handler := metrics.MetricsMiddleware(mux)
 ```
 
-scraping `/metrics` with prometheus (or just curling it during a load test) gives real numbers instead of guesses.
+scraping the `/metrics` endpoint during load testing shows actual throughput and latency percentiles.
 
-## graceful shutdown
+## shutting down cleanly
 
-the server starts in a goroutine:
+the server starts in a separate goroutine:
 
 ```go
 go func() {
@@ -273,7 +242,7 @@ go func() {
 }()
 ```
 
-then the main goroutine waits for `SIGINT` or `SIGTERM`.
+the main thread blocks on operating system signals:
 
 ```go
 quit := make(chan os.Signal, 1)
@@ -281,7 +250,7 @@ signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 <-quit
 ```
 
-on shutdown, it gives the server five seconds to stop accepting new work and finish active requests:
+on interrupt, the server gets five seconds to finish processing active requests before shutting down completely:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -290,11 +259,11 @@ defer cancel()
 server.Shutdown(ctx)
 ```
 
-during load testing this mattered a lot. i could stop the server mid-benchmark without dropping connections or corrupting state.
+this prevents dropped connections or state corruption if the server restarts under load.
 
-## tests
+## running tests
 
-the handler tests use `httptest`, which means they run without opening a real port. that forced the design into cleaner pieces: handlers accept a `UserStore`, middleware accepts a `Limiter`, and the mux assembles the same way in a test as in `main`.
+handler tests run using the standard `httptest` package, which simulates requests without opening network ports. passing dependencies (like the store and limiter) into the handlers and middleware makes this layout simple to test:
 
 ```go
 req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name":"Alice"}`))
@@ -302,11 +271,7 @@ rr := httptest.NewRecorder()
 mux.ServeHTTP(rr, req)
 ```
 
-handler tests cover the full user lifecycle (create, fetch, delete, fetch again and expect `404`) plus input validation: empty names, unknown fields, multiple json objects, invalid IDs.
-
-the store tests exercise CRUD and verify that deleting a missing user returns false.
-
-the rate limiter tests hit real redis. one test exhausts the bucket and confirms the next request gets denied. another drains the bucket, sleeps just over a second, and confirms the refill let one more request through:
+the handler tests cover routing, validation errors, and lifecycle paths. the rate limiter tests talk to a real redis container to verify that the bucket refills and enforces limits as expected:
 
 ```go
 for i := 0; i < 5; i++ {
@@ -326,11 +291,11 @@ if !allowed {
 }
 ```
 
-integration tests like these are slower, but they test what actually matters: the lua script running inside real redis, not a mock pretending to be redis.
+testing with real redis ensures that the lua script runs correctly.
 
-## load testing with k6
+## load testing results
 
-i used [k6](https://k6.io/) to simulate 50 concurrent virtual users hammering the api for 30 seconds:
+i used k6 to run a benchmark with 50 concurrent clients requesting a single user endpoint for 30 seconds:
 
 ```js
 export default function () {
@@ -342,7 +307,7 @@ export default function () {
 }
 ```
 
-the results:
+the metrics:
 
 | metric | value |
 |---|---|
@@ -352,14 +317,10 @@ the results:
 | p95 latency | 13.65 ms |
 | error rate | 0% |
 
-rate-limited responses came back as proper `429`s with `Retry-After` headers. no dropped connections, no crashes, no goroutine leaks. even when the server was actively rejecting ~90% of incoming traffic, latency stayed low. the bottleneck was redis round-trip time, not lock contention in go.
+rate-limited requests returned `429` responses with `Retry-After` headers. the server handled the load without crashing or leaking goroutines. latency stayed low because the primary bottleneck was redis network latency rather than lock contention in the go application.
 
-## what stuck with me
+## next steps
 
-moving the rate limiter from in-memory to redis forced me to think about atomicity at a different level: not mutex locks in a single process, but transactional guarantees across a network boundary. the lua script is maybe 20 lines, but it eliminates an entire class of race conditions that no amount of careful go code could fix alone.
+the rate limiter currently runs against a single redis instance. scaling the server further requires testing a clustered redis setup or a cluster-aware rate-limiting library to see how the connection pool behaves under heavier load.
 
-the context timeout was a small addition that changed how i think about external dependencies. every call across a network is a promise that might not come back. putting a deadline on it turns an unbounded risk into a bounded one.
-
-and the load test turned speculation into numbers. the server handles ~7,600 requests per second with sub-5ms median latency, and i know exactly where it starts to push back.
-
-the full source is [here](https://github.com/sYanXO/http-server-scratch).
+the repository with the complete server and benchmark scripts is on [github](https://github.com/sYanXO/http-server-scratch).

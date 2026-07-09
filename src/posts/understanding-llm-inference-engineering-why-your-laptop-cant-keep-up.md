@@ -4,19 +4,17 @@ date: "2026-04-18"
 description: "i benchmarked a small llm on my cpu and finally saw where inference time actually goes."
 ---
 
-ask a language model a question on your laptop and watch it suffer.
+running a large language model on a standard laptop cpu is a slow process.
 
-the setup was deliberately unimpressive: 16GB RAM, 8 cpu cores, ubuntu 24.04, no gpu. that turned out to be perfect, because the bottleneck was impossible to ignore. no gpu meant the bottleneck couldn't hide behind cuda optimizations.
+to see where the time actually goes, i benchmarked a small model on a basic setup: 16gb of ram, 8 cpu cores, running ubuntu 24.04 without a gpu. running without a graphics card made the hardware limitations clear.
 
-> **prerequisites:** this post assumes basic familiarity with the transformer architecture, attention mechanisms, key-value (kv) caching, tokenization, matrix multiplications in neural networks, and what quantization means at a high level. you don't need to be an expert, but knowing what these terms refer to will help you follow along and reproduce the benchmarks yourself.
+i tested `phi-3.1-mini` and found that token generation was three times slower than prompt processing.
 
-i spent a day benchmarking `phi-3.1-mini` on that cpu-only machine because i wanted to know what exactly was slow. the answer was immediate: generation was about 3x slower than prompt processing for the same model run.
-
-the short version is this: **memory bandwidth is the real problem**. not raw compute. once i saw that, a bunch of other things suddenly made sense: why quantization helps, why long context hurts, why first-token latency feels bad, and why GPUs matter so much.
+the performance limit comes down to **memory bandwidth** instead of processor speed. this bandwidth bottleneck explains why quantization helps, why long context slows down generation, and why graphics cards are necessary for reasonable speeds.
 
 ## the setup
 
-first, i built `llama.cpp` with `openblas`:
+compiling `llama.cpp` with `openblas` allows the system to use all 8 cpu cores:
 
 ```bash
 git clone https://github.com/ggml-org/llama.cpp
@@ -25,9 +23,7 @@ cmake -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS
 cmake --build build -j
 ```
 
-this compiled `llama.cpp` with `openblas`, a linear algebra library that uses all 8 cpu cores.
-
-then i downloaded three different compression levels of the same model to understand quantization tradeoffs:
+i downloaded three versions of `phi-3.1-mini` with different compression levels:
 
 ```bash
 hf download bartowski/Phi-3.1-mini-4k-instruct-GGUF \
@@ -43,7 +39,7 @@ hf download bartowski/Phi-3.1-mini-4k-instruct-GGUF \
   --local-dir ~/models
 ```
 
-for most of the tests i used this benchmark command:
+to run the benchmarks, i used the built-in benchmarking tool:
 
 ```bash
 ~/llama.cpp/build/bin/llama-bench \
@@ -54,26 +50,22 @@ for most of the tests i used this benchmark command:
   --batch-size 2048
 ```
 
-that gave me two numbers per run:
+this test returns two main metrics:
 
 ```text
 | phi3 3B Q4_K - Medium | pp512 | 15.60 +- 1.42 |
 | phi3 3B Q4_K - Medium | tg128 |  6.28 +- 0.07 |
 ```
 
-those labels matter more than they look.
-
 ## prompt processing and token generation are different jobs
 
-`pp512` means prompt processing over 512 input tokens. `tg128` means generating 128 output tokens.
+the `pp512` label represents prompt processing for 512 input tokens. the `tg128` label represents generating 128 output tokens.
 
-they're the exact same attention operation. but one is parallel, one is serial. that changes everything.
+although both operations use the same underlying attention math, they run differently.
 
-prompt processing is the model taking your whole input and pushing it through all transformer layers. this phase is highly parallel. if your prompt is 512 tokens long, the model can process those tokens together.
+prompt processing runs in parallel. the model takes the entire input prompt and processes all tokens at the same time to build the initial state.
 
-generation is the opposite. once the prompt is done, the model has to produce the next token, append it to the sequence, then produce the next one. one token at a time. no cheating.
-
-here's the difference visualized:
+generation is sequential. once the prompt is processed, the model must calculate the next token, add it to the sequence, and then repeat the process for each subsequent token.
 
 ```text
 prompt tokens
@@ -81,7 +73,7 @@ prompt tokens
     v
 +---------------------------+
 | prompt processing (pp)    |
-| compute-bound             |
+| compute bound             |
 | many tokens in parallel   |
 | fill kv cache             |
 +-------------+-------------+
@@ -89,27 +81,27 @@ prompt tokens
               v
 +---------------------------+
 | token generation (tg)     |
-| memory-bound              |
+| memory bound              |
 | 1 token at a time         |
 | read cache, append, loop  |
 +---------------------------+
 ```
 
-that's why pp and tg have completely different speed characteristics. same model, same math, but one scales and one doesn't.
+parallel processing scales well on multi-core processors, while sequential generation cannot be parallelized.
 
-that difference is why `pp512` was about 15.6 tok/s while `tg128` was about 6.3 tok/s on the same machine, with the same model, in the same run.
+this difference explains why prompt processing ran at 15.6 tokens per second, while token generation dropped to 6.3 tokens per second in the same benchmark run.
 
 ## the kv cache is where cpu inference starts to suffer
 
-during generation, the model does not recompute the whole prompt every time. it stores the attention keys and values from previous tokens in the **kv cache** and reuses them.
+to avoid recomputing the entire sequence at each step, the system saves the attention keys and values of previous tokens in the **kv cache**.
 
-that sounds efficient, and it is. but it creates a new problem.
+this saves compute cycles, but it increases memory traffic.
 
-every generated token needs to read the cache for all previous tokens. so the work per token keeps growing with context length. not a little. mechanically.
+each new token must be compared against the keys and values of all preceding tokens. as the sequence grows, the amount of data the processor has to read from the cache increases with every step.
 
 ## why reading cache gets more expensive each step
 
-here's what the generation loop does:
+the data requirements grow at each step of the generation loop:
 
 ```text
 step 1: read cache for 512 tokens  -> generate 1 token
@@ -117,13 +109,13 @@ step 2: read cache for 513 tokens  -> generate 1 token
 step 3: read cache for 514 tokens  -> generate 1 token
 ```
 
-by step 1000, you're moving nearly 3x more data per token than at step 1 (512 tokens vs 1512 tokens of cache). this is why long context hurts.
+by the thousandth token, the processor must read nearly three times as much cache data from memory as it did on the first token.
 
-on my machine, a 4096-token context used roughly 2.9GB more RAM than baseline. watching 2.9GB materialize in real-time made it impossible to ignore: this wasn't theoretical anymore.
+a 4096-token context consumed an additional 2.9gb of memory compared to the baseline. this growth in memory usage shows the scale of data movement involved.
 
 ## longer context hurts generation more than prompt processing
 
-let me benchmark the same model with different context lengths:
+comparing the same model at different context lengths shows the performance impact:
 
 ```text
 metric      512 ctx    4096 ctx   change
@@ -131,55 +123,48 @@ pp speed    15.11      11.90      -21%
 tg speed     5.18       3.37      -35%
 ```
 
-prompt processing degrades gracefully. generation crashes. that's because one is compute-bound and one is memory-bound.
+prompt processing speed drops by 21%, while token generation speed drops by 35%.
 
-the crude mental model is:
+during token generation, the processor must fetch the active model weights and the growing cache from ram for every single token. a rough estimation of the time required per token looks like this:
 
 ```text
-time per generated token =
-  kv cache bytes / memory bandwidth
-  + matmul compute time
+time per token = (model weights + cache data) / memory bandwidth + compute time
 ```
 
-on cpu, memory bandwidth is the ceiling. everything waits for data.
+because cpu memory bandwidth is low, the processor spends most of its time waiting for cache data to arrive from system memory.
 
 ## quantization is really a bandwidth trade
 
-let me test whether compression actually helps:
+benchmarking different compression levels shows how file size interacts with execution speed:
 
-| format | file size | pp512 | tg128 | why it matters |
-|--------|----------:|------:|------:|----------------|
-| Q2_K   | 1.32 GiB  | 9.88  | 7.11  | smallest, but decompression tax |
-| Q4_K_M | 2.23 GiB  | 15.60 | 6.28  | fastest overall, sweet spot |
-| Q8_0   | 3.78 GiB  | 14.96 | 3.85  | largest, hits memory bandwidth wall |
+| format | file size | pp512 | tg128 | notes |
+|--------|----------:|------:|------:|-------|
+| q2_k   | 1.32 gb   | 9.88  | 7.11  | small file, slow prompt processing |
+| q4_k_m | 2.23 gb   | 15.60 | 6.28  | balanced speed and size |
+| q8_0   | 3.78 gb   | 14.96 | 3.85  | large file, slow generation |
 
-notice: smallest file does not mean fastest. this is the key insight about quantization.
+the smallest file is not the fastest overall.
 
-`Q2_K` had the fastest generation, but the slowest prompt processing. the likely reason is decompression overhead. 2-bit weights save memory traffic, but unpacking them costs cpu work.
+the `q2_k` model has the fastest token generation but the slowest prompt processing. unpacking 2-bit weights reduces the data transferred from memory, but decompressing those weights costs extra cpu cycles.
 
-`Q8_0` had the fastest prompt processing (14.96, almost tied with Q4) but the slowest generation speed (3.85). that's because the model file is huge — you get good compute efficiency during the parallel prompt phase, but during generation every single token has to read that massive cache from RAM. generation speed dropped 46% compared to `Q2_K`, even though the model is only 2.8x larger. that's purely a bandwidth problem.
+the `q8_0` model matches `q4_k_m` in prompt processing but runs slowest during token generation. because the file is larger, the processor spends more time transferring weights from ram for every token. generation speed drops by 46% compared to `q2_k` because of this memory bandwidth limit.
 
-`Q4_K_M` landed in the middle on size and came out best overall. this is why `Q4_K_M` is the industry standard everywhere. it's not magic. it's the best compromise.
+the `q4_k_m` format balances size and speed. it remains the standard choice because it avoids both high decompression costs and heavy memory transfer overhead.
 
-> **key insight:** quantization isn't about making smaller models. it's about optimizing the data-to-compute ratio on your hardware.
+quantization is less about saving disk space and more about finding the right balance between data transfer and processor compute.
 
 ## first-token latency and streaming speed are separate problems
 
-i wanted to see what real inference felt like, not just benchmark numbers. so i ran `llama-server` locally:
+running a local server shows how these bottlenecks feel in practice:
 
 ```bash
 ~/llama.cpp/build/bin/llama-server \
-  --model ~/models/Phi-3.1-mini-4k-instruct-Q4_K_M.gguf \
+  --model ~/models/phi-3.1-mini-4k-instruct-q4_k_m.gguf \
   --port 8000 \
   --threads 8
 ```
 
-then i sent a small chat completion request and timed two things:
-
-- time until the first token arrived
-- sustained generation speed after that
-
-for a short prompt, i got:
+a standard chat request returned these timing metrics:
 
 ```text
 first token latency: 0.981s
@@ -188,72 +173,48 @@ total time:         13.308s
 tokens generated:       66
 ```
 
-that 0.981 second pause is dead air. users see nothing. then it suddenly streams at around 5 tokens per second. that's two completely different bottlenecks.
-
-the timeline looks like this:
+the initial delay of nearly a second is the time it takes the processor to read and evaluate the prompt. once that completes, the model begins streaming tokens at about five per second.
 
 ```text
 0s                   0.981s                                     13.308s
 |--------------------|------------------------------------------|
-dead air             first token                                done
-prompt processing    streaming at ~5.35 tok/s
+prompt evaluation    first token                                done
+                     sequential streaming
 ```
 
-server logs confirmed the same pattern:
+the server logs split the execution time:
 
 ```text
 prompt eval time =   972.71 ms / 20 tokens
 eval time        = 12325.20 ms / 67 tokens
 ```
 
-the prompt processing finished in under 1 second. the generation took 12+ seconds. same model, same request, completely different speed profiles.
+evaluating the 20-token prompt took less than a second, while generating the 67-token response took over twelve seconds.
 
 ## why gpu inference feels like a different universe
 
-the answer isn't that gpus are faster at math.
+the main advantage of a graphics card for running models is memory speed.
 
-once you look at the generation loop as a bandwidth problem, the gpu story gets very simple. gpus have much faster memory. not just more of it. much faster.
+graphics cards use high-bandwidth memory (vram) rather than standard system ram. the difference in data transfer rates is substantial:
 
 ```text
 +----------------------+    +----------------------+
 | cpu dram bandwidth   |    | gpu vram bandwidth   |
-| 50-100 GB/s          |    | 500+ GB/s            |
-| cache reads crawl    |    | cache reads fly      |
+| 50-100 gb/s          |    | 500+ gb/s            |
+| slower cache reads   |    | faster cache reads   |
 +----------------------+    +----------------------+
 ```
 
-that's 5-10x faster for the exact same memory access pattern. on gpu, that 2.9GB kv cache for 4096 tokens moves in milliseconds instead of hundreds of milliseconds. generation stops being the dominant bottleneck — compute becomes the bottleneck instead.
+with five to ten times more bandwidth, a graphics card can load the model weights and the kv cache in a fraction of the time. a 2.9gb cache that takes hundreds of milliseconds to read on a cpu moves in milliseconds on a gpu, shifting the primary bottleneck from memory retrieval to processor compute.
 
-so when people say gpus are good for llms, the answer is not just because gpus do more math. they also move model weights and cache data far more efficiently. for inference, especially generation, that distinction matters a lot.
-
-## what i understand now that i didn't before
-
-before doing these runs, i had a vague picture that inference was hard because transformers are big and matrix multiplies are expensive. that's true, but incomplete.
-
-reality:
-
-- prompt processing likes parallel compute
-- generation lives inside a serial loop
-- the kv cache grows with context
-- reading that cache becomes a bandwidth problem
-- quantization helps when it reduces bytes moved more than it increases decode cost
-
-this model explains real-world behavior:
-
-- why long context slows down inference
-- why smaller quantizations can be faster than you'd expect
-- why cpu inference feels sticky but gpu inference feels instant
-- why almost all inference optimization is really memory optimization in disguise
-
-
+graphics cards are well suited for running models because they transfer weights and cache data quickly, not just because they perform fast matrix math.
 
 ## next steps
 
-some things to try:
+if you want to test these limits on your own hardware, you can modify a few parameters to watch the bottlenecks shift:
 
-- try thread scaling: benchmark with `-t 4`, `-t 2`, `-t 1` and watch where the bandwidth ceiling hits
-- test context length impact: run the same benchmark at `512`, `2048`, `4096`, `8192` tokens
-- download a `7B` model and benchmark it against `3B` — model size is the ultimate bandwidth multiplier
-- these will confirm that the patterns you see here apply everywhere
+- adjust the thread count using `-t 4`, `-t 2`, or `-t 1` to see where cpu performance hits a memory bandwidth limit.
+- increase the benchmark context length to `2048` or `4096` to watch how token generation speed declines as the cache grows.
+- test a `7b` model against a `3b` model to see how doubling the model size increases the memory transfer requirements.
 
-try this on your own machine tonight. run the same benchmarks. the exact numbers will vary.
+running these tests makes the relationship between cache size, bandwidth, and compute speed concrete.

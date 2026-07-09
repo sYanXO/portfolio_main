@@ -4,121 +4,105 @@ date: "2026-04-21"
 description: "why the most common performance optimization in distributed systems is also one of its most dangerous failure modes"
 ---
 
+*note: this post is derived from marc brooker's original piece [here](https://brooker.co.za/blog/2021/08/27/caches.html).*
 
+caching is the default fix for a slow system. your database is slow, your API is hammered, or your latency is high: you throw Redis or Memcached in front of it. and it works, right up until the system falls over and refuses to get back up.
 
-*note: this post is derived from the original work by marc brooker. you can read his original piece [here](https://brooker.co.za/blog/2021/08/27/caches.html).*
+these kinds of failures are called metastable failures. they are behind some of the longest, most painful outages at scale, and they are almost impossible to catch with standard load tests.
 
-your database is slow. you add a cache. your api is getting hammered. you add a cache. your latency is too high. you cache it.
+## how we think caches work
 
-this is standard advice in software engineering. it works. until one day it fails catastrophically.
+when we think about caching, we picture a simple flow. a request comes in, we check the cache, and if it's a hit, we return immediately. if it's a miss, we fetch from the database, write to the cache, and return. as traffic flow continues, the cache warms up, database load drops, and everything runs fast. this is a stable state.
 
-this post explores the failure mode that load tests miss. it is the reason for some of the longest outages at massive internet companies. it is called metastability.
+this model isn't wrong, but it only describes one stable state. there is another.
 
-## the problem you think you have
+## two stable states
 
-here is the mental model most engineers carry.
+adding a cache changes how your system behaves under load. it introduces feedback loops that can lock you into a completely different operating mode.
 
-your service receives requests. it checks a cache. on a hit, it returns fast. on a miss, it fetches data from the database, writes it back to the cache, and returns. the cache warms up. database load drops. the dashboard is green.
+when the cache is warm, the feedback loop works for you:
 
-this model is not wrong. it describes one stable state. the problem is that it describes only one stable state. there is another.
+- the cache is warm
+- responses are fast
+- database concurrency stays low
+- the few misses are handled quickly
+- the cache stays warm
 
-## the problem you actually have
+as long as nothing breaks, the system stays here.
 
-a cache is not just a performance optimization. it introduces a new mode. it creates fundamentally different operating regimes with their own feedback dynamics.
+if the cache gets wiped or restarted, a different feedback loop takes over:
 
-when the cache is warm, a self-reinforcing loop operates in your favor.
+- the cache is cold
+- all requests hit the database
+- database concurrency spikes
+- the database gets overwhelmed
+- database responses slow down, timing out before they can populate the cache
+- the cache stays cold
 
-1. cache is warm
-2. responses are fast
-3. database concurrency stays low
-4. the few misses are handled quickly
-5. the cache stays warm
+this bad loop is just as stable as the good one. once you fall into it, the system won't recover on its own.
 
-this loop is stable. without external disturbance, the system stays in it forever.
+## what is metastability
 
-now consider what happens when the cache is cold. maybe you deployed a new version, restarted the cache, or faced a weird traffic spike. a different loop kicks in.
+the term comes from physics. a metastable state is locally stable but isn't the lowest energy state. think of a ball sitting in a shallow dip on a hillside. it stays there until a push rolls it down the hill into a deeper, permanent valley.
 
-1. cache is cold
-2. all requests hit the database
-3. database concurrency spikes
-4. database is overwhelmed
-5. responses are too slow to repopulate the cache
-6. the cache stays cold
+in software, a metastable failure happens when a temporary trigger pushes the system into a bad state, and the system stays broken even after the trigger is gone. the HotOS paper [*metastable failures in distributed systems*](https://sigops.org/s/conferences/hotos/2021/papers/hotos21-s11-bronson.pdf) defines it this way.
 
-this loop is also stable. without external intervention, the system stays in this state forever too.
+that last part is what hurts. if a traffic spike causes a crash, you usually wait for the spike to end. but in a metastable failure, when the spike ends, the system stays down. the feedback loop keeps the failure alive. the database is too busy timing out on cold-cache misses to write anything back to the cache, so the cache stays empty, and the database stays broken.
 
-two stable states. one good, one bad.
-
-## understanding metastability
-
-the concept comes from physics. a metastable state is locally stable but not the lowest energy state. think of a ball balanced on top of a hill. it stays there until disturbed. a small push, and it rolls down to a different stable state and stays there.
-
-a research paper titled [*Metastable Failures in Distributed Systems*](https://sigops.org/s/conferences/hotos/2021/papers/hotos21-s11-bronson.pdf) defines it clearly. metastable failures occur in systems with uncontrolled load where a trigger causes the system to enter a bad state that persists even when the trigger is removed.
-
-the last part is the crucial detail. the system stays broken even when the trigger is removed.
-
-the restart is done. the traffic spike has passed. the system is still broken. the standard incident playbook of finding the cause and fixing it fails here because the cause is already gone.
-
-the feedback loop is sustaining the failure. the database is too overwhelmed by cold-cache misses to respond fast enough to repopulate the cache. the cache stays cold. the database stays overwhelmed.
+the trigger is gone, but the system is still dead. standard incident playbooks fail here because finding the original cause doesn't help you fix the running system.
 
 ## why load tests miss this
 
-this failure mode is not triggered by more load than usual. it is triggered by differently shaped load combined with a cache disruption.
+most load tests ramp up traffic slowly against a warm cache. this doesn't show you what happens when the cache disappears.
 
-your standard load test ramps up requests against a warm cache. it will not find this issue.
-
-the pattern that triggers cache-induced metastability involves two things. first, you get unusual traffic. maybe it is a different key distribution or a bunch of long-tail keys all at once. second, you have a cache disruption event like a restart or eviction.
-
-neither of these alone is fatal. together, they lock your system into the bad loop. caches assume that your key access distribution is non-uniform. when that assumption becomes false, your monitoring might not even notice.
+metastable failures are usually triggered by a combination of two things: a cache disruption like a restart or eviction, and a shift in traffic shape, like a sudden wave of requests for rare, uncached keys. individually, neither event causes a crash. together, they push the ball down the hill. caches work because we assume some keys are much more popular than others. when that assumption breaks, the system enters the bad loop before your monitoring even alerts you.
 
 ## the thundering herd and the doom loop
 
-there are two well-known mechanisms at play here.
+two mechanisms drive this failure.
 
-the **thundering herd** happens at the moment of cache eviction. a popular cache entry expires. a hundred thousand clients notice simultaneously. they all race to the database at the same instant. the database is asked to serve the entire population at once.
+the **thundering herd** is the trigger. when a popular cache entry expires, thousands of clients notice at once. they all query the database for the same key at the same millisecond, forcing the database to do the same heavy query over and over.
 
-the **doom loop** is what happens next. the database is slow, so clients time out. clients retry. now you have double or triple the original request volume hitting a saturated system. the retries make the database slower. the slower database causes more timeouts. the system enters a self-amplifying spiral.
+the **doom loop** is the sustaining feedback. when the database slows down under this load, client requests start timing out. the clients retry. now you have double or triple the traffic hitting an already struggling database. the extra queries make it slower, causing more timeouts and more retries. the system is stuck.
 
-the thundering herd is the trigger. the doom loop is the sustaining mechanism.
+## a numbers example
 
-## a practical example
+say your database handles 1,000 queries per second before it slows down. your service gets 5,000 requests per second. you put a cache in front of it with a 90% hit rate. the database only sees 500 queries per second, and everything runs smoothly.
 
-i want to walk through a thought experiment.
+then you restart the cache.
 
-imagine a database that can handle 1000 queries per second before latency degrades. your service receives 5000 requests per second. you add a cache with a 90 percent hit rate. the database now sees 500 queries per second. everything is fine.
+all 5,000 requests hit the database at once. that's five times what it can handle. latency goes through the roof, and clients start timing out. those clients retry. with a 1.5x retry multiplier, you now have 7,500 requests per second hitting a dead database.
 
-then your cache gets wiped.
+the database cannot process queries fast enough to write anything back to the cache. the cache stays empty, the database stays saturated, and the system stays down.
 
-all 5000 requests hit the database. it is asked to serve five times its capacity. latency spikes. clients time out. they retry with a 1.5x factor. now you have 7500 requests per second hitting the database.
+the original cache outage might have lasted two seconds, but the failure will last until someone manually intervenes: rate limiting the traffic, waiting for the database to clear its queue, warming the cache, and slowly ramping load back up.
 
-the database cannot serve requests fast enough to repopulate the cache. the cache stays empty. the database stays saturated. you are in the bad loop.
+if your service only works when the cache is warm, the cache isn't an optimization. you've just built a load-bearing wall out of Redis.
 
-the trigger might have lasted two seconds. the failure will last until you manually intervene by killing the traffic, letting the database drain, warming the cache offline, and slowly reintroducing load.
+## how do you stop this from happening
 
-the underlying truth is that the database was never capable of running your service. the cache was load-bearing infrastructure.
+you can't just stop caching, but you have to build for the cold start.
 
-## solving the problem
+here are a few ways to protect the system:
 
-the answer is not to stop using caches. the answer is changing how you think about them.
+first, **design for a cold start**. if your system cannot survive with an empty cache, you don't have a cache, you have a capacity problem.
 
-**design for the cold start.** ask if your system could cope if the cache were empty right now. if no, you have a capacity problem disguised by a cache.
+second, **isolate the cache**. engines like Amazon Aurora keep the page cache in a separate process from the database itself. if the database restarts, the cache stays warm, eliminating a major trigger.
 
-**isolate the cache.** some modern database engines (AuroraDB) move their page cache out of the main database process. when the database restarts, the cache is still warm. this removes a common trigger.
+third, **limit concurrency**. set a hard limit on in-flight database queries and reject excess traffic early. returning a fast error is better than letting requests queue until clients time out and retry.
 
-**limit concurrency explicitly.** put a hard cap on the number of in-flight requests. shed load early. return an error to the client instead of queuing indefinitely. a fast error is better than a client waiting 30 seconds to time out and retry.
+fourth, **jitter your ttls**. add a random offset to your expiration times so popular keys don't all expire at the same second.
 
-**jitter your ttls.** do not let all your cache entries expire at the same time. add randomness to expiry times so misses spread over time.
+fifth, **track the right metrics**. cache hit rate is a lagging indicator. by the time it drops, the database is already dead. monitor database concurrency and queue depth instead.
 
-**monitor the sustaining mechanisms.** cache hit rate is a lagging indicator. the leading indicators are database concurrency and queue depth. when those climb, you are watching the loop form.
-
-**treat retries as load multiplication.** every retry adds load to a struggling system. exponential backoff with jitter is mandatory. without jitter, retries synchronize and create their own thundering herd.
+finally, **force clients to back off**. client retries multiply load. clients must use exponential backoff with random jitter, otherwise their retries will synchronize and create a secondary thundering herd.
 
 ## breaking the loop
 
-the root cause of a metastable failure is the sustaining feedback loop, not the trigger. there are many possible triggers. if you only patch the specific trigger, the feedback loop will catch you the next time something else goes wrong.
+the root cause of a metastable failure is the feedback loop, not the trigger. you can patch the specific trigger that caused today's outage, but a different trigger will trip the same loop next month.
 
-the durable fix is to break the loop. ask why the system could not recover when the cache was wiped.
+the only real fix is to make sure the loop can't sustain itself. when a cache gets wiped, the system needs a way to recover on its own.
 
-this implicates your capacity planning, your retry logic, your backpressure mechanisms, and your database sizing. most long outages are metastability events. learning to read that signature and break the loop is how you build resilient systems.
+this means looking at your retry policies, setting concurrency limits, and sizing the database for minimum acceptable performance. most long-lasting outages at scale are metastability events. once you learn to recognize them, you start designing systems that fail gracefully instead of locking up.
 
-the honest version of the cache advice is this. add a cache to speed up a system that can handle its load without one. jitter your ttls. design clients with backoff and jitter. set explicit concurrency limits. monitor queue depth. assume the cache will be cold sometimes and verify the system survives it.
+i've learned to treat caches as bonuses, not load-bearing walls. if your database can't handle the baseline load without a cache, you need a bigger database, not a bigger Redis cluster.

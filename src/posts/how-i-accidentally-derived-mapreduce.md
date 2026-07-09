@@ -4,7 +4,7 @@ date: "2026-04-13"
 description: "i tried to count discord messages and ended up reinventing a 2004 google paper."
 ---
 
-here's the problem. you have a 2GB file containing 10 million discord messages. each line looks like this:
+here's the problem. you have a 2gb file containing 10 million discord messages. each line looks like this:
 
 ```text
 alice | 2026-04-01T12:34:56Z | lmao did you see that play
@@ -16,7 +16,7 @@ username, timestamp, message. pipe-delimited. you want to find the **top 10 most
 
 ## attempt 1: the obvious thing
 
-you read the file line by line, split on `|`, grab the username, and throw it into a hashmap. key is the username, value is the count. every time you see a username, increment by 1. when you're done, sort the map by value, take the top 10.
+you read the file line by line, split on `|`, grab the username, and throw it into a hashmap. key is the username, value is the count. every time you see a username, increment by 1. when you're done, sort the map by value, and take the top 10.
 
 ```text
 counts = {}
@@ -26,28 +26,28 @@ for line in file:
 sort counts, take top 10
 ```
 
-this works. it's simple. it's correct. on a 100MB file with 500K messages, it runs in a few seconds and uses maybe 50MB of RAM (the map itself is tiny, the number of *unique* usernames is way smaller than 10 million). you could write this in any language in 10 minutes and go get lunch.
+this works because it is simple and correct. on a 100mb file with 500k messages, it runs in a few seconds and uses maybe 50mb of ram. the map itself is tiny since the number of unique usernames is small. you could write this in any language in 10 minutes and go get lunch.
 
 so what's the problem?
 
 ## the problem: your file got bigger
 
-2GB is fine. your hashmap of unique usernames still fits in memory easily. even if there are a million unique users, that's maybe a few hundred MB for the map. you can stream the file line by line so you never load the whole 2GB into memory. this actually still works.
+2gb is fine. your hashmap of unique usernames still fits in memory easily. even if there are a million unique users, that's maybe a few hundred mb for the map. you can stream the file line by line so you never load the whole 2gb into memory. this still works.
 
-but now imagine the file is 200GB. or 2TB. now you're not running this on your laptop. you're running it on a machine with 8GB of RAM and a 2TB disk. the file doesn't fit in memory but that's fine, you're streaming it. the hashmap still fits because unique usernames are bounded.
+but now imagine the file is 200gb, or even 2tb. you are no longer running this on your laptop; you are running it on a machine with 8gb of ram and a 2tb disk. the file does not fit in memory, which is fine because you are streaming it. the hashmap still fits because the number of unique usernames is bounded.
 
-but what if the problem changes slightly? what if instead of counting messages per user, you need to **group messages by user**, collect all messages for each user into a list? now your hashmap values aren't integers, they're lists of strings. and those lists *do* grow proportionally to the file size. 200GB of messages means your hashmap values collectively hold 200GB of data. that does not fit in 8GB of RAM.
+but what if you need to group all messages by user instead of just counting them? now the hashmap values are lists of strings instead of integers. those lists grow with the file size. if you have 200gb of messages, your hashmap needs to hold 200gb of data in memory. that won't fit in 8gb of ram.
 
-this is where the naive approach actually breaks. not on counting specifically, but on the general case of doing something with all the data for a given key. counting was a special case where the intermediate state (an integer) was tiny. for most real problems, it isn't.
+the naive approach breaks when you need to collect all the data for a given key. counting was a special case where the intermediate state, a single integer, was tiny. for most real problems, it is not.
 
-so let's solve the general version. because if we can solve that, counting falls out trivially.
+so let's solve the general version, because if we can solve that, counting is trivial.
 
 ## attempt 2: chunking
 
-okay, new plan. split the 200GB file into smaller chunks, say 1GB each. process each chunk independently. for each chunk, build a hashmap of username to list of messages. write the results to disk. move on to the next chunk.
+okay, new plan. split the 200gb file into smaller chunks, say 1gb each. process each chunk independently. for each chunk, build a hashmap of username to list of messages, write the results to disk, and move on to the next chunk.
 
 ```text
-for each 1GB chunk:
+for each 1gb chunk:
     partial_results = {}
     for line in chunk:
         username = line.split("|")[0].strip()
@@ -55,37 +55,35 @@ for each 1GB chunk:
     write partial_results to disk
 ```
 
-now your memory usage stays bounded. you never hold more than ~1GB of data in the map at once. great.
+now memory usage stays bounded. you never hold more than about 1gb of data in the map at a time.
 
-but there's a problem. alice shows up in chunk 1 and also in chunk 37 and also in chunk 142. her messages are scattered across dozens of partial result files. to get the complete picture for alice, you'd need to go back and merge all those partial results together.
+but there is a catch. alice shows up in chunk 1, chunk 37, and chunk 142. her messages are scattered across dozens of partial result files. to get the complete list for alice, you have to merge all those partial results.
 
-this merging step is annoying. you need to open all 200 partial result files, find all the entries for alice, combine them, and do that for every single user. you've basically just moved the problem. instead of the file being too big for memory, you now have results too fragmented to reassemble efficiently.
+this merging step is slow. you have to open all 200 files, pull out the entries for alice, combine them, and repeat that for every user. the results are now too fragmented to reassemble efficiently.
 
 ## attempt 3: group by username
 
-here's the key insight that fixes everything.
+here is the trick that makes this work.
 
-instead of splitting the file into random 1GB chunks, what if you split it **by username**? all of alice's messages go into `alice.txt`. all of bob's messages go into `bob.txt`. every user gets their own file.
+what if you split the file by username instead of arbitrary chunks? all of alice's messages go to `alice.txt`, bob's go to `bob.txt`, and so on.
 
 ```text
-for line in file (streaming, line by line):
+for line in file:
     username = line.split("|")[0].strip()
-    append line to file "{username}.txt"
+    append line to username.txt
 ```
 
-this is just a streaming pass over the input. you read one line, figure out which file it belongs to, append it. memory usage is basically zero (you just need a file handle pool, and you can manage that). you never hold the whole file in memory.
+this is a single streaming pass. you read a line, figure out the target file, and append it. memory usage is close to zero, since you only need to manage a pool of open file handles. you never load the whole file into memory.
 
-and now the beautiful part: **each user file is independently processable**. to count alice's messages, you just count the lines in `alice.txt`. to find her most recent message, you just scan `alice.txt`. you never need to look at bob's file. the problems are completely independent of each other.
+now, each user file is self-contained. to count alice's messages, you just count the lines in `alice.txt`. to find her most recent message, you scan `alice.txt`. you do not need to touch bob's file. the jobs are completely isolated, with no merging or fragmented output.
 
-no merging. no fragmented results. each output file is self-contained and complete.
+## streaming within a single user file
 
-## the edge case that reveals the real insight
+what if alice is extremely active? if she sent 50 million messages, `alice.txt` might be 10gb, and we are back to a file that does not fit in memory.
 
-okay but what if alice is pathologically active? what if she sent 50 million messages and `alice.txt` is 10GB? we're back to the same problem. the file doesn't fit in memory.
+but we do not need to load the whole file into memory.
 
-except... do we actually need to load it into memory? 
-
-if we're counting messages, we literally just need a single integer. start at 0. read a line, increment by 1. read another line, increment by 1. we stream through the entire file and our memory usage is: **one integer**. doesn't matter if the file is 10GB or 10TB. one integer.
+to count messages, we only need to track a single integer. we start at zero, read a line, increment the counter, and discard the line. memory usage is just one integer, whether the file is 10gb or 10tb.
 
 ```text
 count = 0
@@ -93,52 +91,40 @@ for line in user_file:
     count += 1
 ```
 
-this is when something clicked for me. the reason this works is that our processing function is **stateless with respect to other users and trivially streamable within a single user**. we don't need to hold all of alice's data in memory simultaneously. we process it in a stream, maintaining only the minimal state we need (a counter), and discard each line after we've seen it.
+this works because counting is stateless across users and streamable within each user's file. we do not need all of alice's messages in memory at once. we stream through them, update the counter, and throw the line away.
 
-and this is also why, if you've ever seen mapreduce described, the mapper emits `(username, 1)` for every line instead of trying to maintain a running count. it seems wasteful. why emit a million `(alice, 1)` pairs when you could just emit `(alice, 1000000)` at the end?
+this is why mapreduce mappers emit a `(username, 1)` pair for every line instead of keeping a running count. emitting a million `(alice, 1)` pairs seems wasteful compared to emitting a single `(alice, 1000000)` at the end.
 
-because the mapper is **stateless**. it sees one line, emits one pair, moves on. it doesn't need to remember what it saw before. it doesn't need RAM proportional to the number of unique keys. it doesn't need to coordinate with any other mapper. it's embarrassingly parallel.
+but the mapper is stateless. it processes one line, emits the pair, and moves on without remembering what came before. it does not need memory for unique keys or coordination with other mappers, making it easy to run in parallel.
 
-the counting happens later, in the reducer, where it *is* someone's job to maintain state. but only for one key at a time, and only as a stream.
+the reducer handles the counting later. it maintains state, but only for one key at a time as a stream.
 
-## summary
+## map, shuffle, and reduce
 
+first, you scan the input line by line, extract the username, and emit a key-value pair. this is the **map** phase. because each line is processed independently, you do not need to carry state between lines.
 
+next, you group all the emitted key-value pairs by username so that all of alice's pairs end up in the same place. this is the **shuffle** phase.
 
-**phase 1:** scan the input line by line. for each line, extract the key (username) and emit a key-value pair. each line is processed independently. no state carried between lines.
+finally, you stream through the values for each user and compute the final result. for counting, you just sum the ones. this is the **reduce** phase. memory usage per user remains bounded to a single integer.
 
-that's the **map** phase.
+i ended up with these same three phases because they solve the physical constraints of working with large data, not because i read the original google paper first.
 
-**phase 2:** take all the emitted key-value pairs and group them by key. all of alice's pairs end up together. all of bob's pairs end up together.
+each phase exists to solve a specific constraint: mapping gives you stateless, parallel processing; shuffling brings all data for the same key together; and reducing aggregates that data within bounded memory. these are not arbitrary design choices, but requirements forced by the hardware.
 
-that's the **shuffle** phase.
+## scaling to clusters
 
-**phase 3:** for each group, stream through the values and compute the final result. for counting, that's just summing 1s. memory usage per group: one integer.
+in 2004, jeff dean and sanjay ghemawat published [mapreduce: simplified data processing on large clusters](https://research.google/pubs/mapreduce-simplified-data-processing-on-large-clusters/). at the time, google was processing 20+ petabytes of data per day and needed a programming model that let thousands of engineers write distributed computations without worrying about networking, load balancing, or machine failures.
 
-that's the **reduce** phase.
-
-map. shuffle. reduce. i literally derived the same three phases that Dean and Ghemawat described in the original google paper. not because i read the paper first, but because each phase solves a specific problem that naturally arises when you try to process data that doesn't fit in memory.
-
-the map phase exists because you need stateless, parallelizable processing.  
-the shuffle phase exists because you need all data for the same key in the same place.  
-the reduce phase exists because you need to aggregate within a key using bounded memory.
-
-none of these are arbitrary design choices. they're forced by the constraints.
-
-## why this actually matters
-
-in 2004, jeff dean and sanjay ghemawat published [MapReduce: Simplified Data Processing on Large Clusters](https://research.google/pubs/mapreduce-simplified-data-processing-on-large-clusters/). at the time, google was processing 20+ petabytes of data per day and needed a programming model that let thousands of engineers write distributed computations without thinking about fault tolerance, load balancing, or network partitioning.
-
-mapreduce was that model. the insight was that if you force the programmer to express their computation as a stateless map function and a per-key reduce function, then the *framework* can handle everything else: distributing the work across thousands of machines, re-running failed tasks, managing intermediate data. the programmer writes two simple functions and the framework turns it into a distributed computation.
+mapreduce handled those details. if you write your code as a stateless map function and a per-key reduce function, the framework can handle the rest: distributing work across machines, re-running failed tasks, and managing intermediate files. you write two simple functions and the framework manages the cluster.
 
 hadoop took this idea and made it open source. for about a decade, big data basically meant hadoop mapreduce.
 
-these days nobody writes raw mapreduce jobs anymore. spark, bigquery, snowflake, duckdb, they all provide friendlier interfaces (SQL, dataframes, whatever). but underneath, the core insight is the same: stateless per-record transformations, group by key, aggregate per group. that's map, shuffle, reduce. the abstraction is so fundamental that it keeps showing up even when nobody calls it by name.
+these days nobody writes raw mapreduce jobs anymore. spark, bigquery, snowflake, duckdb, they all provide friendlier interfaces (sql, dataframes, whatever). but underneath, the core insight is the same: stateless per-record transformations, group by key, aggregate per group. that's map, shuffle, reduce. the abstraction is so fundamental that it keeps showing up even when nobody calls it by name.
 
-and here's the thing i find most elegant: everything we derived assumed a single machine. we were just trying to process data that doesn't fit in RAM. but the exact same decomposition works for distributing across *thousands* of machines. instead of one mapper reading the whole file, you have 1000 mappers each reading one chunk. instead of one machine doing the shuffle, you hash each key to a partition and send it over the network. instead of one reducer per key, you have thousands of reducers running in parallel on different machines.
+the elegance of this is that the same approach works across thousands of machines. you can run a thousand mappers in parallel, each reading a single chunk of the input. to shuffle, you hash keys to partitions and send them over the network. then, thousands of reducers run in parallel on different nodes.
 
-the distribution is just an optimization on top of the core idea. the core idea is: **if you can express your computation as stateless map + group by key + streaming reduce, you can scale it to arbitrary data sizes.** whether that scaling happens across cores, disks, or datacenters is an implementation detail.
+distributing the work is just an optimization. the core concept remains: if you can express the computation as a stateless map, a group by key, and a streaming reduce, you can scale to arbitrary data sizes. whether you scale across cores, disks, or datacenters is just an implementation detail.
 
 i didn't know any of that when i started. i just wanted to count discord messages.
 
-next post: implementing this whole thing in Go. a working mapreduce engine you can actually run.
+next post: implementing this whole engine in go. a working mapreduce system you can run yourself.

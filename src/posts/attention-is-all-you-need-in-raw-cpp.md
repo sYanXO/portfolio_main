@@ -4,15 +4,15 @@ date: "2026-06-17"
 description: "i implemented a transformer encoder from scratch in c++ with zero dependencies. matrix math, multi-head attention, SIMD matmul, 4-bit quantization, and a full forward pass you can hold in one file."
 ---
 
-every explanation of transformers i've read starts with a diagram. boxes labeled *multi-head attention* and *feed forward* connected by arrows, with *add & norm* wedged in between. the diagram is correct. it also tells you almost nothing about what the computer actually does.
+every explanation of transformers i've read starts with a diagram. boxes labeled *multi-head attention* and *feed forward* connected by arrows, with *add & norm* wedged in between. the diagram is correct, but it tells you almost nothing about what the computer actually does.
 
-so i built one. a single-file, zero-dependency c++ transformer encoder that runs a forward pass on two tokens. no pytorch, no eigen, no blas. just the standard library, `<cmath>`, and intel SIMD intrinsics for the matmul.
+so i built one. a single-file, zero-dependency c++ transformer encoder that runs a forward pass on two tokens. no pytorch, eigen, or blas. just the standard library, `<cmath>`, and intel SIMD intrinsics for the matmul.
 
 [source code](https://github.com/sYanXO/baremetal-attention).
 
 ## starting with the obvious: matrix multiply
 
-the transformer is, at its core, a sequence of matrix multiplications with some nonlinearities and normalization steps in between. so the first thing i wrote was a `Matrix` struct and a naive O(n³) matmul:
+transformers are mostly matrix multiplications with a few normalization and activation functions in between. i started with a simple `Matrix` struct and a naive O(n³) loop:
 
 ```cpp
 struct Matrix {
@@ -33,15 +33,15 @@ for(int i=0;i<A.rows();++i){
 }
 ```
 
-this works. it's also slow in a way that matters even at toy scale, because the `i-j-k` loop order means the inner loop strides through column-major memory in B. every access to `B.data[k][j]` jumps to a different row. the cache hates this.
+this works, but it is slow even for a toy model. the `i-j-k` loop order makes the inner loop stride through column-major memory in B. every access to `B.data[k][j]` jumps to a different row, which kills cache performance.
 
-the fix is `i-k-j` ordering. keep `k` in the middle loop, broadcast `A.data[i][k]` once, and let the inner `j` loop walk sequentially through both `B.data[k][j]` and `C.data[i][j]`. now the hot loop is hitting contiguous memory.
+reordering the loops to `i-k-j` fixes this. we keep `k` in the middle, broadcast `A.data[i][k]` once, and let the inner `j` loop walk sequentially through both `B.data[k][j]` and `C.data[i][j]`. now the loop hits contiguous memory.
 
-that reorder alone opened the door to SIMD.
+that reordering makes it easy to vectorize the loop.
 
 ## making matmul go fast with avx2
 
-once the inner loop is a sequential walk over floats, you can widen it. intel's AVX2 instructions operate on 256-bit registers (8 floats at a time). the matmul becomes:
+when the inner loop walks sequentially over floats, we can vectorize it. intel's AVX2 instructions let us process 8 floats at a time:
 
 ```cpp
 float a_val = A.data[i][k];
@@ -61,13 +61,13 @@ for (; j < B.cols(); ++j) {
 }
 ```
 
-`_mm256_set1_ps` broadcasts one float into all 8 lanes. `_mm256_fmadd_ps` does a fused multiply-add: `C = (A * B) + C` in a single instruction. the tail loop handles columns that aren't a multiple of 8.
+`_mm256_set1_ps` broadcasts one float to all 8 lanes of a register. `_mm256_fmadd_ps` runs a fused multiply-add (`C = A * B + C`) in a single instruction, and a tail loop handles any leftover columns.
 
-this is a 2x4 toy matrix. the SIMD acceleration here is arguably overkill. but the point was to understand how production matmul kernels are structured, and the pattern is identical: reorder loops for locality, vectorize the inner loop, handle the remainder.
+this is overkill for a 2x4 toy matrix. the point was just to see how production kernels are structured. the pattern is identical: reorder loops for cache locality, vectorize, and clean up the remainder in a tail loop.
 
 ## the attention mechanism
 
-with the math primitives in place, `scaled_dot_product_attention` almost writes itself. the formula from the paper is:
+with those primitives, `scaled_dot_product_attention` is straightforward. the paper's formula is:
 
 **Attention(Q, K, V) = softmax((Q × Kᵀ) / √d_k) × V**
 
@@ -88,19 +88,19 @@ Matrix weights = softmax(scores);
 return matmul(weights, V);
 ```
 
-each step does exactly one thing:
+how this works under the hood:
 
-1. **Q × Kᵀ** computes how much each token's query matches every other token's key. the result is a square similarity matrix.
-2. **scaling by 1/√d_k** keeps the dot products from getting huge. without it, softmax saturates into a near-one-hot distribution and gradients vanish. d_k is the key dimension, and dividing by its square root normalizes the variance back to roughly 1.
-3. **masking** (optional) sets specific positions to -1e9 before softmax, which forces those attention weights to zero. this is how decoders prevent tokens from attending to the future during training.
-4. **softmax** converts raw scores into a probability distribution. each row sums to 1. the implementation subtracts the row max before calling `exp()` to avoid numerical overflow.
-5. **multiplying by V** produces the final weighted combination. each output row is a weighted average of value vectors, where the weights come from step 4.
+- **q × kᵀ** calculates how much each query matches every key, producing a similarity matrix.
+- **scaling by 1/√d_k** stops the dot products from growing too large. without this, softmax values saturate and gradients vanish. dividing by the square root of the key dimension normalizes the variance.
+- **masking** sets future token scores to a very low number (`-1e9`) before softmax, forcing the attention weights to zero so tokens cannot look ahead.
+- **softmax** converts raw scores into a probability distribution where each row sums to 1. we subtract the maximum value in the row before exponentiating to prevent numerical overflow.
+- **multiplying by v** averages the value vectors using the softmax weights.
 
 ## softmax: the part everyone gets wrong on first try
 
-the naive version is just `exp(x) / sum(exp(x))`. it works until your values get large enough that `exp(x)` returns infinity.
+the naive implementation is `exp(x) / sum(exp(x))`. this works until the inputs are large enough to make `exp(x)` overflow to infinity.
 
-the fix is subtracting the row maximum before exponentiating:
+subtracting the maximum value of the row before exponentiating fixes it:
 
 ```cpp
 float max_val = A.data[i][0];
@@ -114,13 +114,13 @@ for (int j = 0; j < A.cols(); ++j) {
 }
 ```
 
-mathematically identical (the max cancels out in the ratio), but now the largest exponent is `exp(0) = 1`. no overflow, no NaN.
+this is mathematically identical because the shift cancels out in the division. the largest exponent becomes `exp(0) = 1`, which prevents overflow and `NaN` errors.
 
 ## multi-head attention: split, attend, stitch
 
-single-head attention works, but the paper argues that running multiple smaller attention operations in parallel captures different types of relationships. a head might learn positional patterns while another learns semantic similarity.
+single-head attention works, but splitting the embedding into multiple heads lets the model track different relationships. one head might track position, while another tracks meaning.
 
-the implementation needs two helpers. `slice_cols` extracts a vertical chunk of a matrix (like `numpy.split`). `concat_cols` glues matrices side-by-side. with those:
+i wrote two helper functions: `slice_cols` to split the matrices, and `concat_cols` to glue them back together:
 
 ```cpp
 int head_dim = Q.cols() / num_heads;
@@ -136,13 +136,13 @@ for (int h = 0; h < num_heads; ++h) {
 }
 ```
 
-with a 4-dimensional embedding and 2 heads, each head operates on 2 dimensions independently. the concatenated output has the same shape as the input. in a real transformer, you'd multiply by a learned output projection matrix W_O after concatenation. i skipped that to keep the implementation focused on the routing logic.
+with a 4-dimensional embedding and 2 heads, each head processes 2 dimensions. the concatenated output matches the input shape. in a production transformer, you would multiply this by a learned output projection matrix `W_O` after concatenating. i left that out to keep the routing logic clean.
 
 ## the rest of the encoder block
 
-after attention, the original transformer paper stacks two more operations: a residual connection with layer normalization, then a feed-forward network with another residual and norm.
+after attention, the block needs a residual connection, layer normalization, and a feed-forward network.
 
-**layer normalization** is straightforward. for each row, compute the mean and variance, then normalize:
+layer normalization calculates the mean and variance for each row, then normalizes the values:
 
 ```cpp
 float mean = sum / A.cols();
@@ -150,28 +150,23 @@ float variance = variance_sum / A.cols();
 A.data[i][j] = (A.data[i][j] - mean) / std::sqrt(variance + epsilon);
 ```
 
-the epsilon (1e-5) prevents division by zero when variance is exactly 0. this implementation skips the learnable γ and β parameters that production models use for rescaling.
+a small `epsilon` (1e-5) prevents division by zero. i skipped the learnable scale and shift parameters (`gamma` and `beta`) to keep the code simple.
 
-**the feed-forward network** is two linear layers with a ReLU in between. W1 expands the dimension (4 → 8), ReLU zeros out negatives, W2 compresses it back (8 → 4). in the paper this is described as `FFN(x) = max(0, xW₁ + b₁)W₂ + b₂`. i dropped the biases.
+the feed-forward network uses two linear projections with a relu activation. the first layer expands the dimension from 4 to 8, the activation crops negatives, and the second layer projects it back to 4. i dropped the biases.
 
-**residual connections** are just element-wise addition. add the input of a sub-layer to its output before normalizing. this gives gradients a shortcut path during training and lets deeper networks actually converge.
+residual connections add the input of a layer directly to its output. this helps during training by giving gradients a direct path to flow backward.
 
-## 4-bit quantization: trading precision for memory
+## 4-bit quantization
 
-the last piece i added was 4-bit weight quantization for the FFN weight matrices. the idea: instead of storing each weight as a 32-bit float, compress it down to 4 bits. two weights per byte. that's an ~87.5% reduction in memory.
+i also added 4-bit weight quantization for the feed-forward network. instead of storing weights as 32-bit floats, we pack two 4-bit weights into a single byte, saving about 87.5% of the memory.
 
-the quantization flow:
-
-1. find the absolute maximum value in each row.
-2. compute a scale factor: `scale = max_val / 7.0f` (because a signed 4-bit integer maxes out at 7).
-3. divide each weight by the scale, round to the nearest integer, clamp to [-8, 7].
-4. pack two 4-bit integers into one byte using bitwise ops:
+to quantize the weights, we find the absolute maximum value in each row, calculate a scale factor (`scale = max_val / 7.0f`), and divide each weight by that scale. we then round the values, clamp them to `[-8, 7]`, and pack two of them into a single byte:
 
 ```cpp
 u_int8_t packed = (q0 & 0x0F) | ((q1 & 0x0F) << 4);
 ```
 
-during inference, the quantized matmul unpacks on the fly:
+when running a forward pass, we unpack these weights on the fly:
 
 ```cpp
 int8_t q0 = packed & 0x0F;
@@ -179,33 +174,37 @@ if (q0 > 7) q0 -= 16;  // sign extension for negative values
 float v0 = q0 * scale;
 ```
 
-the sign extension trick handles negative numbers. a 4-bit value of, say, 0xF (15 unsigned) represents -1 in two's complement. checking if `q0 > 7` and subtracting 16 recovers the correct sign.
+we need to handle negative numbers during unpacking. since a 4-bit value of `0xf` represents `-1` in two's complement, checking if the value is greater than 7 and subtracting 16 recovers the correct sign.
 
-running the forward pass with quantized FFN weights produces output that's close to the full-precision version but not identical. the final encoder output drifts slightly:
+quantized weights produce slightly different outputs than the full-precision version:
 
 ```
 Full precision: 1.30094 -0.236201 -1.45022 0.385477
 Quantized:      0.630434 -1.72749  0.639503 0.457548
 ```
 
-that drift is quantization noise. with only 16 discrete levels per weight, some information gets destroyed. production systems manage this with more sophisticated quantization schemes (per-channel scaling, mixed precision, calibration datasets), but the core idea is the same.
+this difference is quantization noise. compressing weights to 16 discrete values destroys some information. production setups use more complex schemes like per-channel scaling or calibration datasets, but the mechanics are the same.
 
 ## the full forward pass
 
-the `main()` function wires everything into a single encoder block. two tokens, embedding dimension of 4:
+the final `main` function wires these parts into one encoder block processing two tokens with an embedding size of four:
 
 ```
-Input → Multi-Head Attention → Add & Norm → FFN (quantized) → Add & Norm → Output
+input -> multi-head attention -> add & norm -> ffn (quantized) -> add & norm -> output
 ```
 
-X serves as Q, K, and V simultaneously (self-attention). the MHA output gets a residual connection and layer norm. then the normalized output passes through the quantized feed-forward network, gets another residual connection and norm, and out comes the final encoder representation.
+the input matrix serves as the query, key, and value vectors for self-attention. the attention output gets a residual addition and a layer normalization. we pass that result through the quantized feed-forward network, add the residual, run one last normalization, and get the final output.
 
-the whole thing is ~450 lines in one file. no build system beyond `g++ main.cpp -o main -mavx2 -mfma -O3`.
+the entire implementation fits in 450 lines of c++. you can compile it with:
+
+```bash
+g++ main.cpp -o main -mavx2 -mfma -O3
+```
 
 ## what i learned
 
-writing attention from scratch forces you to think about things the frameworks hide. the loop ordering in matmul matters for cache performance. softmax needs a numerical stability trick or it silently produces garbage. multi-head attention is conceptually parallel but the implementation is mostly bookkeeping (slicing and concatenation). quantization is a lossy compression scheme with a surprisingly simple core.
+writing this from scratch forces you to deal with the details frameworks hide. you see why loop order matters for the cache, how softmax silently fails without max subtraction, and how multi-head attention is mostly just slicing and gluing matrices together.
 
-the code is deliberately not production quality. it uses `vector<vector<float>>` instead of contiguous memory, doesn't batch, and the quantized matmul path has no SIMD. but every function maps directly to a box in that diagram i mentioned at the top, and you can trace the data flow by reading the code linearly.
+the code is not for production. it uses nested vectors instead of flat memory, does not support batching, and the quantized path is not vectorized. but every function maps to a box in the original architecture diagram, and you can trace the data flow from top to bottom.
 
-if you've only ever called `nn.TransformerEncoder`, i'd recommend building at least the attention function once from raw math. the paper is called *attention is all you need*, and after writing it out in C++, i finally believe that.
+if you have only ever used high-level layers, it is worth building attention from raw math at least once. the paper's title says attention is all you need, and writing it out in c++ makes that feel true.

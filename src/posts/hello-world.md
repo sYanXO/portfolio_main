@@ -1,21 +1,23 @@
 ---
 title: "hello, world"
 date: "2026-04-12"
-description: "first post. why i'm writing, what to expect, and why twitter wasn't enough."
+description: "first post. why i wanted a blog and why twitter is too short."
 ---
 
-so this is the first post. i've been wanting to write stuff down for a while, not for clout or an audience, just for me. turns out if you don't write your ideas down, they stay as half-baked vibes in your head forever. writing forces you to actually figure out what you think.
+i wanted a place to write things down. keeping ideas in my head usually means they stay as half-baked vibes. writing them down forces me to figure out what i actually think about a problem.
 
-## what i'll write about
+## what i write about
 
-basically whatever i'm learning or building at the time:
+i will write about whatever i am building:
 
-- **systems programming.** Go internals, concurrency patterns, random stuff i run into while building backend things that won't stop breaking.
-- **distributed systems.** notes from papers i read, things that genuinely surprised me, failure modes that sound fake until they happen to you at 3am.
-- **LLM inference & infra.** how models get served at scale, GPU optimization, and the surprisingly deep engineering problems hiding behind a simple API call.
+- backend systems, mostly go internals and concurrency issues
+- distributed systems papers and real-world failure modes
+- llm inference, gpu performance, and memory bottlenecks
 
-## why not just tweet about it?
+## why not twitter
 
-because some ideas need more than 280 characters. and i want a place where i can come back, cringe at old takes, and rewrite them instead of watching them disappear into the void of everyone's timeline.
+twitter is too short for anything useful. i also want a permanent archive. i want to look back at my old takes, cringe, and update them.
 
-this site is intentionally simple. no comments, no analytics, no "subscribe to my newsletter" popup. just words.
+the site has no analytics, comments, or newsletter popups. it is just a clean spot for text.
+
+next, i am writing about building a minimal version of git.

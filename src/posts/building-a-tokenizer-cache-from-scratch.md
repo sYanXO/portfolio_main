@@ -4,15 +4,15 @@ date: "2026-07-01"
 description: "a dict, a linked list, and a lock walk into an LLM pipeline. the result is a 10x speedup on repeated tokenization."
 ---
 
-every time you call an LLM api, the same system prompt gets tokenized. every single time. the same few-shot examples, the same prefix, the same boilerplate. tiktoken does the work, returns the tokens, and forgets it ever happened.
+every time you call an LLM api, you re-tokenize the exact same system prompt. the same few-shot examples, the same prefix, the same boilerplate. tiktoken does the work, returns the tokens, and forgets it ever happened.
 
-on a single call that costs maybe 50 microseconds. across a pipeline that processes thousands of requests, each re-tokenizing the same handful of strings, it adds up to real wall-clock time.
+for a single request, that takes maybe 50 microseconds. but when you run a pipeline processing thousands of requests, those microseconds add up to real wall-clock time.
 
-so i built a caching layer. it sits between your code and your tokenizer, remembers what it has seen, and skips the redundant work. this post walks through how it works, the design decisions i made along the way, and the parts that were less obvious than i expected.
+so i built a caching layer. it sits between your code and your tokenizer, remembers what it has seen, and skips the redundant work. here is how it works, the design choices i made, and the parts that turned out to be tricky.
 
 ## the interface
 
-the cache wraps any tokenizer function. you pass it a callable that takes a string and returns a sequence of ints. tiktoken, huggingface, sentencepiece, a hand-rolled `ord()` loop. anything.
+the cache wraps any tokenizer function. you pass it a callable that takes a string and returns a sequence of ints. it works with tiktoken, huggingface, sentencepiece, or even a basic ord() loop.
 
 ```python
 import tiktoken
@@ -25,11 +25,11 @@ tokens = cache.tokenize("Hello world")   # miss, calls tiktoken
 tokens = cache.tokenize("Hello world")   # hit, returns from cache
 ```
 
-dependency injection keeps the cache decoupled from any specific tokenizer library. no hard dependencies, no import-time coupling. you bring the tokenizer, the cache brings the memory.
+dependency injection keeps the cache decoupled from any specific tokenizer library. there are no hard dependencies or import-time coupling. it only handles the memory.
 
 ## starting simple
 
-the first version was embarrassingly simple. a dict mapping strings to token tuples, a hit counter, a miss counter.
+the first version was simple. a dict mapping strings to token tuples, a hit counter, and a miss counter.
 
 ```python
 def tokenize(self, text):
@@ -42,13 +42,13 @@ def tokenize(self, text):
     return tokens
 ```
 
-this works. it also grows without bound. every unique string you tokenize stays in memory forever. for a long-running service with varied inputs, that is a memory leak wearing a trench coat.
+this works, but it grows without bound. every unique string you tokenize stays in memory forever. in a long-running service with varied inputs, that becomes a memory leak.
 
 ## adding lru eviction
 
-the fix is a `maxsize` parameter with LRU (least-recently-used) eviction. when the cache is full and a new entry arrives, the oldest untouched entry gets dropped.
+the fix is adding a maxsize parameter with LRU (least-recently-used) eviction. when the cache is full and a new entry arrives, the oldest untouched entry gets dropped.
 
-the standard approach is `collections.OrderedDict` or `functools.lru_cache`. i went with a manual implementation: a dict for O(1) key lookup, plus a doubly-linked list for O(1) reordering and eviction.
+you could use collections.OrderedDict or functools.lru_cache, but i wrote a manual implementation. it uses a dict for O(1) key lookup and a doubly-linked list for O(1) reordering and eviction.
 
 ```text
 Most-recently-used                              Least-recently-used
@@ -59,7 +59,7 @@ Most-recently-used                              Least-recently-used
   +--------+    +--------+    +--------+    +--------+
 ```
 
-the linked list node is minimal:
+the node definition is simple:
 
 ```python
 class _Node:
@@ -72,9 +72,9 @@ class _Node:
         self.next = None
 ```
 
-`__slots__` saves a few bytes per node by skipping the instance `__dict__`. the sentinel head and tail nodes simplify edge cases. you never have to check for `None` when unlinking or inserting, because there is always a node on both sides.
+__slots__ saves some bytes per node by skipping the instance __dict__. sentinel head and tail nodes simplify the edge cases. you do not need to check for None when unlinking or inserting, because there is always a node on both sides.
 
-on a cache hit, the node gets unlinked from its current position and re-inserted right after head. on a miss, a new node is created and inserted after head. if the cache exceeds `maxsize`, `tail.prev` gets evicted. all of these operations are O(1) pointer swaps.
+on a cache hit, the node gets unlinked and re-inserted right after head. on a miss, the cache creates a node and inserts it after head. if the cache exceeds maxsize, tail.prev gets evicted. all of these are O(1) pointer swaps.
 
 ```python
 def _move_to_front(self, node):
@@ -90,11 +90,11 @@ def _evict_lru(self):
 
 ## the concurrency problem
 
-a plain dict with a linked list works fine in a single thread. the moment you add concurrency, things get interesting.
+this works in a single thread, but adding concurrency makes things more complicated.
 
-the naive instinct is to use a read-write lock. readers (cache hits) can run concurrently, writers (cache misses that insert new entries) get exclusive access. but LRU breaks this model. a cache hit is not read-only. it mutates the linked list by moving the accessed node to the front. every access is a write.
+you might think of using a read-write lock, letting readers (cache hits) run concurrently and writers (cache misses) take exclusive access. but LRU breaks this model. a cache hit is not read-only because it mutates the linked list by moving the accessed node to the front. every access is actually a write.
 
-i built a readers-writer lock anyway (it was a good exercise), but in practice every `tokenize()` call takes the write lock because of the LRU reorder. the read path is unused.
+i built a readers-writer lock anyway, but in practice every tokenize() call takes the write lock to reorder the LRU list. the read path goes unused.
 
 ```python
 class RWLock:
@@ -109,13 +109,13 @@ class RWLock:
             self._read_ready.wait()
 ```
 
-a future optimization would be an approximate-LRU policy (like clock or second-chance) that could restore genuine read concurrency. but for the current access patterns, the write lock on every call is fine.
+an approximate-LRU policy like clock or second-chance would restore read concurrency. but for this setup, the write lock on every call is fine.
 
 ## double-checked locking
 
-here is the subtlety that took the most thought. when a cache miss happens, you need to call the actual tokenizer. tokenizer calls are expensive (that is the whole reason we are caching). you do not want to hold the lock while the tokenizer runs, because that serializes all concurrent callers.
+the tricky part is handling cache misses. calling the actual tokenizer is expensive. if we hold the lock while it runs, we serialize all concurrent callers.
 
-so the flow looks like this:
+so the sequence works like this:
 
 1. acquire write lock
 2. check the cache. if hit, return. release lock.
@@ -126,7 +126,7 @@ so the flow looks like this:
 7. if still a miss, insert the new entry
 8. release the lock
 
-step 6 is the double-check. without it, two threads computing the same key at the same time would both insert, creating duplicate nodes in the linked list. the second check catches this and treats the late arrival as a hit instead.
+step 6 is the doublecheck. without it, two threads computing the same key at the same time would both insert, creating duplicate nodes in the linked list. the second check catches this and treats the late arrival as a hit.
 
 ```python
 def tokenize(self, text):
@@ -162,15 +162,15 @@ def tokenize(self, text):
         self._lock.release_write()
 ```
 
-i wrote a specific test for this: 20 threads all calling `tokenize("same key for everyone")` simultaneously. the assertion checks that the cache contains exactly one entry and that `hits + misses == 20`. it passes.
+i tested this by running 20 threads that call tokenize("same key for everyone") simultaneously. the assertion checks that the cache contains exactly one entry and that hits + misses equals 20. the test passes.
 
 ## benchmarking (and why single runs lie)
 
-the first version of the benchmark ran a single timed loop and printed the result. the numbers varied by over 4x between runs. same machine, same code, wildly different results.
+the first benchmark ran a single timed loop. the numbers varied by over 4x on the same machine.
 
-the problem is OS-level noise. scheduler jitter, background processes, CPU frequency scaling. a single wall-clock measurement captures the workload plus whatever else the system was doing at that moment.
+background noise from the OS like scheduler jitter or CPU frequency scaling can distort a single wall-clock measurement.
 
-the fix is running multiple trials and reporting `min` alongside `median`. the minimum is the least noise-contaminated sample (noise can only add time, never remove it). i settled on 7 trials per measurement.
+to fix this, i ran seven trials per measurement and tracked the minimum alongside the median. since background noise only adds time, the minimum is the most accurate sample.
 
 ```python
 def bench_latency_cached(texts, repeats=1000, trials=7):
@@ -185,31 +185,31 @@ def bench_latency_cached(texts, repeats=1000, trials=7):
     return elapsed_times
 ```
 
-the results with tiktoken's `cl100k_base` encoding:
+the results with tiktoken's cl100k_base encoding:
 
 | metric | uncached | cached | speedup |
 |--------|----------|--------|---------|
 | best (min) | 42.8 ms | 5.7 ms | 7.5x |
 | typical (median) | 58.2 ms | 5.8 ms | ~10x |
 
-per-call hit latency: **0.624 microseconds** mean, **0.734 microseconds** p99. sub-microsecond for the median. the cache lookup (dict access, pointer swap, lock acquire/release) is roughly 100x faster than re-calling tiktoken.
+the average hit latency is 0.624 microseconds. that makes the cache lookup roughly 100x faster than re-calling tiktoken.
 
 ## testing the edges
 
-the test suite covers 17 cases across four categories: basic functional correctness, edge cases, LRU eviction, and concurrency.
+the test suite covers 17 cases including correctness, edge cases, LRU eviction, and concurrency.
 
-the edge cases were the ones i worried about least and learned from most. empty strings work (they produce an empty tuple, which caches normally). a 100k-character string works (the cache does not care about value size, only entry count). unicode with emoji, CJK characters, and escape sequences works because the cache is keyed on the raw string, not on any transformed representation.
+the edge cases turned out to be the most interesting. empty strings work by producing an empty tuple. a 100k-character string works because the cache only tracks entry count, not value size. unicode, emoji, and escape sequences work because the cache is keyed on the raw string.
 
-the LRU tests verify that accessing an entry promotes it and protects it from eviction. `maxsize=1` is a degenerate case that exercises every code path: every new key evicts the previous one.
+the LRU tests verify that accessing an entry protects it from eviction. maxsize=1 acts as an edge case where every new key evicts the previous one.
 
-the structural integrity check walks the linked list forward and backward, verifies both traversals are exact reverses, and confirms the list length matches the dict size. this catches broken pointers that would otherwise silently corrupt the ordering.
+a structural integrity check walks the list in both directions to verify they are exact reverses and match the dict size. this catches broken pointers that would otherwise corrupt the ordering.
 
 ## what i would do differently
 
-the readers-writer lock was the right thing to build for learning, but it is mostly wasted here. since every LRU access takes the write lock, a plain `threading.Lock()` would give the same behavior with less code. i kept the RWLock because if i ever switch to an approximate-LRU that does not reorder on hits, the read path becomes useful again.
+the readers-writer lock was a good exercise but is mostly wasted here. since every LRU access takes the write lock, a plain threading.Lock() would behave the same way with less code. i kept it in case i switch to an approximate-LRU policy later.
 
-the cache is also not size-aware. `maxsize` counts entries, not bytes. a cache holding 128 short strings and a cache holding 128 novel-length strings use the same eviction policy but very different amounts of memory. for my use case (caching system prompts and few-shot examples) this is fine, but a general-purpose library would want a byte budget.
+the cache does not track memory size. maxsize counts entries rather than bytes. a cache holding 128 short strings and a cache holding 128 novel-length strings use the same eviction policy but very different amounts of memory. this is fine for caching system prompts, but a general-purpose library would need a byte budget.
 
 ## the code
 
-the full implementation is on [github](https://github.com/sYanXO/tokenizer-cache). it is pure python, zero dependencies, and about 140 lines of actual logic across three files. if you are building LLM pipelines and re-tokenizing the same strings, try dropping it in and checking the hit rate. the numbers might surprise you.
+the full implementation is on [github](https://github.com/sYanXO/tokenizer-cache). it is pure python, has zero dependencies, and uses about 140 lines of logic. you can drop it into your LLM pipelines to skip redundant tokenization.

@@ -9,6 +9,13 @@ const projects = [
     status: 'wip',
   },
   {
+    name: 'URL Shortener',
+    desc: 'fastapi url shortener with sqlite persistence, redis redirect caching, process-local bloom filter negative lookups, and async click logging through celery. benchmarked with k6 at ~198 requests per second.',
+    github: 'https://github.com/sYanXO/url-shortener',
+    live: null,
+    status: null,
+  },
+  {
     name: 'Attention Is All You Need, in Raw C++',
     desc: 'single-file, zero-dependency transformer encoder in C++. matrix math, multi-head attention, SIMD matmul, 4-bit quantization, and a full forward pass you can hold in one file.',
     github: 'https://github.com/sYanXO/baremetal-attention',
