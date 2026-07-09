@@ -6,7 +6,7 @@ description: "how a bloom filter, redis cache, and celery task queue keep redire
 
 if you build a url shortener, the database is usually the first thing to fail. every redirect requires a lookup, and if a path gets hot, you spend all your time querying the disk. if a path does not exist, you query the database anyway just to return a 404.
 
-i built a simple url shortener in python to see how much load we can keep off the database. it uses a process-local bloom filter for negative lookups, redis to cache successful redirects, and celery to handle click logging. here is the request flow.
+i built a simple url shortener in python to see how much load we can keep off the database. the [source code](https://github.com/sYanXO/url-shortener) is on github. it uses a process-local bloom filter for negative lookups, redis to cache successful redirects, and celery to handle click logging. here is the request flow.
 
 ```text
 request
