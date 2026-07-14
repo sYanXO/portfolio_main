@@ -2,6 +2,20 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const projects = [
   {
+    name: 'MoodFlix',
+    desc: 'AI-powered movie recommendation engine. Generates dynamic context-aware mood quizzes via Gemini, performs hybrid semantic vector search with pgvector (768-dim embeddings), and resolves collaborative recommendations in "Friend Mode" sessions. Next.js, Go (Gin), PostgreSQL, and pgvector.',
+    github: 'https://github.com/sYanXO/movieflix',
+    live: 'https://movieflix-ten-phi.vercel.app/',
+    status: null,
+  },
+  {
+    name: 'Terminal Coding Agent',
+    desc: 'local autonomous coding agent built in Go from scratch. supports Gemini 2.5 Flash and offline Ollama models, executes batched tool-call plans sequentially, and features surgical search-and-replace patching with colored git-diff terminal output and Docker command sandboxing.',
+    github: 'https://github.com/sYanXO/tui-coding-agent',
+    live: null,
+    status: null,
+  },
+  {
     name: 'CaskDB',
     desc: 'A persistent Key-Value store written in Go using an LSM-Tree architecture. Currently implementing the Write-Ahead Log (WAL) for crash recovery and an in-memory SkipList memtable before moving on to SSTable compaction.',
     github: null,
@@ -10,9 +24,9 @@ const projects = [
   },
   {
     name: 'URL Shortener',
-    desc: 'fastapi url shortener with sqlite persistence, redis redirect caching, process-local bloom filter negative lookups, and async click logging through celery. benchmarked with k6 at ~198 requests per second.',
+    desc: 'fastapi url shortener with sqlite persistence, redis redirect caching, process-local bloom filter negative lookups, and async click logging through celery. benchmarked with k6 at ~198 requests per second. (note: hosted on render free tier, expect a cold start delay on first load)',
     github: 'https://github.com/sYanXO/url-shortener',
-    live: null,
+    live: 'https://url-shortener-i5wt.onrender.com/',
     status: null,
   },
   {
